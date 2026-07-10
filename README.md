@@ -1,1 +1,1 @@
-Dự án Website bán sách - Kết nối Jira
+Dự án Website bán sách - Kết nối Jira.
