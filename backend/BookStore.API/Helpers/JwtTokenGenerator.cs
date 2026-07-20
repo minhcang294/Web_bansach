@@ -10,7 +10,6 @@ public class JwtTokenGenerator
     private readonly IConfiguration _config;
     public JwtTokenGenerator(IConfiguration config) => _config = config;
 
-    // userId dạng string vì khóa chính trong DB (MAKHACHHANG/MANHANVIEN) là varchar, không phải int
     public (string token, DateTime expiresAt) GenerateToken(string userId, string email, string fullName, string role)
     {
         var jwtSettings = _config.GetSection("JwtSettings");
@@ -23,7 +22,7 @@ public class JwtTokenGenerator
             new(JwtRegisteredClaimNames.Sub, userId),
             new(JwtRegisteredClaimNames.Email, email),
             new(ClaimTypes.Name, fullName),
-            new(ClaimTypes.Role, role),
+            new(ClaimTypes.Role, string.IsNullOrEmpty(role) ? "Staff" : role), // Đảm bảo role
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

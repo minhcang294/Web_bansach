@@ -8,13 +8,6 @@ import { useAuth } from "../context/AuthContext.jsx";
  * Trang đăng nhập - Website bán sách
  * Bảng màu: đỏ macaron (blush) + đỏ nhạt + kem ấm
  * Font: Playfair Display (display) + Quicksand (thân chữ)
- *
- * Chức năng đầy đủ:
- * - Gọi POST /api/auth/login sang backend C#
- * - Nhận + lưu JWT token, thông tin user
- * - Cập nhật AuthContext để toàn app biết đã đăng nhập
- * - Điều hướng về trang chủ sau khi thành công
- * - Validate cơ bản, hiển thị lỗi, trạng thái loading
  */
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -52,8 +45,8 @@ export default function LoginPage() {
       localStorage.setItem("accessToken", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      login(user); // cập nhật AuthContext toàn app
-      navigate("/"); // điều hướng về trang chủ
+      login(user);
+      navigate("/");
     } catch (err) {
       if (err.response?.status === 401) {
         setErrorMsg("Email hoặc mật khẩu không đúng.");
@@ -75,14 +68,30 @@ export default function LoginPage() {
     <div style={styles.page}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Quicksand:wght@400;500;600;700&display=swap');
-        .macaron-input:focus { border-color: #C97874 !important; box-shadow: 0 0 0 3px rgba(201,120,116,0.15); }
+        
+        /* Hiệu ứng focus cho container bọc ngoài input */
+        .macaron-input-container:focus-within { 
+          border-color: #C97874 !important; 
+          box-shadow: 0 0 0 3px rgba(201,120,116,0.15) !important; 
+        }
+        
+        /* Ghi đè màu xanh tự động điền (autofill) của Chrome */
+        .macaron-input:-webkit-autofill,
+        .macaron-input:-webkit-autofill:hover, 
+        .macaron-input:-webkit-autofill:focus, 
+        .macaron-input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 30px #FFF9F8 inset !important;
+            -webkit-text-fill-color: #4A3230 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
         .macaron-btn:hover:not(:disabled) { background: #C97874 !important; }
         .macaron-link:hover { color: #6E3335 !important; }
         .macaron-check:checked { accent-color: #C97874; }
       `}</style>
 
       <div style={styles.card}>
-        {/* ===== Bên trái: thương hiệu + hình minh họa ===== */}
+        {/* ===== Bên trái ===== */}
         <div style={styles.leftPanel}>
           <ScallopPattern />
           <div style={styles.brandRow}>
@@ -111,7 +120,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ===== Bên phải: form đăng nhập ===== */}
+        {/* ===== Bên phải ===== */}
         <div style={styles.rightPanel}>
           <div style={styles.formWrap}>
             <h1 style={styles.title}>Đăng nhập</h1>
@@ -119,8 +128,12 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} noValidate>
               <label style={styles.label} htmlFor="email">Email</label>
-              <div style={styles.inputRow}>
-                <Mail size={17} color="#B0827E" style={styles.inputIcon} />
+              
+              {/* Box Input Email sử dụng Flexbox */}
+              <div className="macaron-input-container" style={styles.inputContainer}>
+                <div style={styles.iconBox}>
+                  <Mail size={17} color="#B0827E" />
+                </div>
                 <input
                   id="email"
                   type="email"
@@ -128,14 +141,18 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="macaron-input"
-                  style={styles.input}
+                  style={styles.flexInput}
                   autoComplete="email"
                 />
               </div>
 
               <label style={{ ...styles.label, marginTop: 18 }} htmlFor="password">Mật khẩu</label>
-              <div style={styles.inputRow}>
-                <Lock size={17} color="#B0827E" style={styles.inputIcon} />
+              
+              {/* Box Input Mật khẩu sử dụng Flexbox (Mắt sẽ tự động bị đẩy qua phải) */}
+              <div className="macaron-input-container" style={styles.inputContainer}>
+                <div style={styles.iconBox}>
+                  <Lock size={17} color="#B0827E" />
+                </div>
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -143,13 +160,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="macaron-input"
-                  style={{ ...styles.input, paddingRight: 40 }}
+                  style={styles.flexInput}
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  style={styles.eyeBtn}
+                  style={styles.eyeBtnFlex}
                   aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                 >
                   {showPassword ? <EyeOff size={17} color="#B0827E" /> : <Eye size={17} color="#B0827E" />}
@@ -199,10 +216,6 @@ export default function LoginPage() {
               Chưa có tài khoản?{" "}
               <Link to="/register" className="macaron-link" style={styles.bottomLink}>Đăng ký ngay</Link>
             </p>
-
-            <p style={styles.testHint}>
-              Tài khoản test: <code>test@bookstore.com</code> / <code>123456</code>
-            </p>
           </div>
         </div>
       </div>
@@ -210,7 +223,7 @@ export default function LoginPage() {
   );
 }
 
-/* ---------- Trang trí: hoa văn vỏ macaron gợn sóng ---------- */
+/* ---------- Trang trí ---------- */
 function ScallopPattern() {
   return (
     <svg viewBox="0 0 400 40" preserveAspectRatio="none" style={styles.scallop} aria-hidden="true">
@@ -222,7 +235,6 @@ function ScallopPattern() {
   );
 }
 
-/* ---------- Minh họa: sách xếp chồng + macaron ---------- */
 function BookIllustration() {
   return (
     <svg viewBox="0 0 220 160" width="220" height="160" aria-hidden="true">
@@ -306,15 +318,52 @@ const styles = {
   title: { fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 30, color: "#4A1F1F", margin: "0 0 6px" },
   subtitle: { fontSize: 14, color: "#9A7A78", margin: "0 0 28px" },
   label: { display: "block", fontSize: 13, fontWeight: 600, color: "#6E3335", marginBottom: 6 },
-  inputRow: { position: "relative", display: "flex", alignItems: "center" },
-  inputIcon: { position: "absolute", left: 13 },
-  input: {
-    width: "100%", height: 44, borderRadius: 12, border: "1.5px solid #F0DAD8",
-    background: "#FFF9F8", padding: "0 14px 0 38px", fontSize: 14,
-    fontFamily: "'Quicksand', sans-serif", color: "#4A3230", outline: "none",
-    boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s",
+  
+  /* CẤU TRÚC FLEXBOX MỚI ĐẢM BẢO CHÍNH XÁC 100% VỊ TRÍ ICON */
+  inputContainer: {
+    display: "flex",
+    alignItems: "center",
+    width: "100%",
+    height: 44,
+    borderRadius: 12,
+    border: "1.5px solid #F0DAD8",
+    background: "#FFF9F8",
+    boxSizing: "border-box",
+    transition: "border-color 0.15s, box-shadow 0.15s",
+    overflow: "hidden", 
   },
-  eyeBtn: { position: "absolute", right: 12, background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" },
+  iconBox: {
+    paddingLeft: 14,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flexInput: {
+    flex: 1, /* Đẩy icon mắt sát qua mép phải */
+    height: "100%",
+    width: "100%",
+    background: "transparent",
+    border: "none",
+    padding: "0 12px",
+    fontSize: 14,
+    fontFamily: "'Quicksand', sans-serif",
+    color: "#4A3230",
+    outline: "none",
+  },
+ eyeBtnFlex: {
+  width: 42,
+  height: "100%",
+  flexShrink: 0,
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  paddingRight: 20,
+  paddingLeft: 0,
+},
+  
   rowBetween: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, marginBottom: 22 },
   checkboxRow: { display: "flex", alignItems: "center", gap: 7, cursor: "pointer" },
   checkbox: { width: 15, height: 15, cursor: "pointer" },

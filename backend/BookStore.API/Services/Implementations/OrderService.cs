@@ -21,15 +21,15 @@ public class OrderService : IOrderService
     public async Task<OrderResponseDto> CreateOrderAsync(string maKhachHang, OrderCreateDto dto)
     {
         var cartItems = await _gioHangRepository.GetByKhachHangIdAsync(maKhachHang);
-        if (cartItems.Count == 0)
-            throw new CartException("Giỏ hàng đang trống, không thể đặt hàng.", 400);
+        if (cartItems == null || cartItems.Count == 0)
+            throw new Exception("Giỏ hàng đang trống, không thể đặt hàng."); // Sử dụng Exception hoặc CartException của bạn
 
         // Kiểm tra lại tồn kho lần cuối trước khi chốt đơn
         foreach (var item in cartItems)
         {
             var sach = await _sachRepository.GetByIdAsync(item.MaSach);
             if (sach is null || sach.SoLuongTon < item.SoLuong)
-                throw new CartException($"Sách \"{item.Sach?.TenSach}\" không đủ số lượng trong kho.", 400);
+                throw new Exception($"Sách \"{item.Sach?.TenSach}\" không đủ số lượng trong kho.");
         }
 
         var maHoaDon = "HD" + DateTime.UtcNow.Ticks.ToString()[^10..]; // sinh mã tự động
@@ -63,8 +63,11 @@ public class OrderService : IOrderService
         foreach (var item in cartItems)
         {
             var sach = await _sachRepository.GetByIdAsync(item.MaSach);
-            sach!.SoLuongTon -= item.SoLuong;
-            await _sachRepository.UpdateAsync(sach, sach.Gom.FirstOrDefault()?.MaDanhMuc ?? "");
+            if (sach != null)
+            {
+                sach.SoLuongTon -= item.SoLuong;
+                await _sachRepository.UpdateAsync(sach, sach.Gom.FirstOrDefault()?.MaDanhMuc ?? "");
+            }
         }
 
         await _gioHangRepository.ClearAsync(maKhachHang);
@@ -76,7 +79,7 @@ public class OrderService : IOrderService
     public async Task<List<OrderResponseDto>> GetMyOrdersAsync(string maKhachHang)
     {
         var orders = await _hoaDonRepository.GetByKhachHangIdAsync(maKhachHang);
-        return orders.Select(MapToDto).ToList();
+        return orders?.Select(MapToDto).ToList() ?? new List<OrderResponseDto>();
     }
 
     public async Task<OrderResponseDto?> GetByIdAsync(string maKhachHang, string orderId)
@@ -84,6 +87,34 @@ public class OrderService : IOrderService
         var order = await _hoaDonRepository.GetByIdAsync(orderId, maKhachHang);
         return order is null ? null : MapToDto(order);
     }
+
+    // ====================================================================
+    // CÁC HÀM MỚI BỔ SUNG CHO ADMIN
+    // ====================================================================
+
+    public async Task<List<OrderResponseDto>> GetAllOrdersAsync()
+    {
+        // Lấy tất cả danh sách hóa đơn từ Database
+        var orders = await _hoaDonRepository.GetAllAsync();
+        return orders?.Select(MapToDto).ToList() ?? new List<OrderResponseDto>();
+    }
+
+    public async Task UpdateStatusAsync(string orderId, string status)
+    {
+        // Admin chỉ cần truyền OrderId để lấy ra hóa đơn, không cần mã khách hàng
+        // Lưu ý: Đảm bảo Repository của bạn có hàm GetByIdAsync nhận 1 tham số
+        var order = await _hoaDonRepository.GetByIdAsync(orderId); 
+        
+        if (order == null)
+        {
+            throw new Exception("Không tìm thấy đơn hàng.");
+        }
+
+        order.TrangThaiGiaoHang = status;
+        await _hoaDonRepository.UpdateAsync(order);
+    }
+
+    // ====================================================================
 
     private static OrderResponseDto MapToDto(HoaDon h) => new()
     {
@@ -93,12 +124,14 @@ public class OrderService : IOrderService
         TotalAmount = h.TongTien,
         ShippingAddress = h.DiaChiGiaoHang,
         PhoneNumber = h.SoDienThoaiNhan,
-        Items = h.ChiTietHoaDons.Select(c => new OrderDetailDto
+        
+        // Bổ sung các trường an toàn, tránh lỗi NullReference
+        Items = h.ChiTietHoaDons?.Select(c => new OrderDetailDto
         {
-            BookTitle = c.Sach?.TenSach ?? "",
+            BookTitle = c.Sach?.TenSach ?? "Sách không xác định",
             ImageUrl = c.Sach?.AnhSach ?? "",
             Quantity = c.SoLuong,
             UnitPrice = c.DonGia
-        }).ToList()
+        }).ToList() ?? new List<OrderDetailDto>()
     };
 }

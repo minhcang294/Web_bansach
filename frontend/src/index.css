@@ -1,111 +1,277 @@
+/* ========================================================== */
+/* FILE: index.css (Đã dọn dẹp sạch code rác mặc định)        */
+/* ========================================================== */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+  --text: #333333;
+  --bg: #fafafa;
+  --sans: 'Be Vietnam Pro', system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
   margin: 0;
+  padding: 0;
+  font-family: var(--sans);
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Cho phép React render tràn viền màn hình 100% */
 #root {
-  width: 1126px;
+  width: 100%;
   max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
+/* Xóa gạch chân mặc định của tất cả các link */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Định dạng chung cho Form và các trường nhập liệu */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* KHAI BÁO NÀY ẢNH HƯỞNG ĐẾN TẤT CẢ NÚT (Đã được xử lý ở phần Chi tiết Sách bên dưới) */
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #e60023; /* Màu đỏ chủ đạo */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+/* Định dạng trang chứa form */
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f9f9f9;
+  padding: 20px;
+}
+
+/* Khung form tạo điểm nhấn */
+.register-form {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eee;
+  width: 100%;
+  max-width: 450px;
+}
+
+/* Tiêu đề */
+.register-form h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+/* Các nhóm input */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
   font-weight: 500;
-  color: var(--text-h);
+  color: #555;
+  font-size: 14px;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+/* Input kiểu mới */
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: 0.3s;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.form-group input:focus {
+  border-color: #e60023;
+  outline: none;
+  box-shadow: 0 0 5px rgba(230, 0, 35, 0.2);
 }
 
-code {
+/* Nút bấm Đăng ký */
+.register-form button {
+  width: 100%;
+  padding: 14px;
+  background-color: #e60023;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.register-form button:hover {
+  background-color: #c7001b;
+}
+
+/* --- Giao diện Card Đăng ký --- */
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  border-color: #aa3bff; /* Màu accent */
+  box-shadow: 0 0 0 3px rgba(170, 59, 255, 0.1);
+}
+
+.btn-primary {
+  background-color: #aa3bff;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #9333ea;
+}
+
+.form-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+
+/* =========================================
+   GIAO DIỆN NÚT CHI TIẾT SẢN PHẨM
+========================================= */
+
+/* Khung bọc nút Tăng/Giảm */
+.qty-control-custom {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  height: 44px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* Nút - và + */
+.qty-control-custom button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: #f9f9f9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: all 0.2s ease;
+  margin-top: 0; /* Ghi đè: Xóa margin-top mặc định */
+}
+
+.qty-control-custom button:hover {
+  background: #e0e0e0;
+  color: #d91c24;
+}
+
+/* Ô hiển thị số lượng */
+.qty-value-custom {
+  width: 50px;
+  text-align: center;
+  font-weight: bold;
+  color: #333;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Nút Thêm vào giỏ hàng */
+.btn-add-cart-custom {
+  width: max-content; /* Ghi đè: Hủy width 100%, tự động co vừa với chữ */
+  margin-top: 0;      /* Ghi đè: Xóa khoảng cách margin-top dư thừa */
+  height: 44px;
+  padding: 0 24px;
+  background: #d91c24;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
   font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap; /* Ngăn chữ bị rớt dòng */
+}
+
+.btn-add-cart-custom:hover:not(:disabled) {
+  background: #b11218;
+  transform: translateY(-2px); /* Hiệu ứng nảy nhẹ lên khi đưa chuột vào */
+  box-shadow: 0 4px 10px rgba(217, 28, 36, 0.3);
+}
+
+.btn-add-cart-custom:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }

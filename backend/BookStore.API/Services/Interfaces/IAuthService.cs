@@ -6,9 +6,13 @@ public interface IAuthService
 {
     Task<AuthResponseDto> LoginAsync(LoginDto dto);
     Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
+    
+    // Các hàm quản lý người dùng dành cho Admin
+    Task<object> GetAllUsersAsync(); 
+    Task DeleteUserAsync(string userId);
 }
 
-// Ném ra khi email/mật khẩu sai hoặc email đã tồn tại - Controller sẽ bắt và trả mã lỗi phù hợp
+// Class Exception để xử lý lỗi nghiệp vụ (ĐỂ RIÊNG BIỆT)
 public class AuthException : Exception
 {
     public int StatusCode { get; }

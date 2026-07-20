@@ -36,6 +36,10 @@ public class NhanVien
     [Column("VAITROPHUTRACH"), MaxLength(30)]
     public string VaiTroPhuTrach { get; set; } = "Staff"; // "Admin" | "Staff"
 
+    // THUỘC TÍNH MỚI ĐÃ THÊM ĐỂ PHÂN QUYỀN
+    [Column("ROLE"), MaxLength(20)]
+    public string Role { get; set; } = "Staff";
+
     [Column("TRANGTHAILAMVIEC"), MaxLength(30)]
     public string? TrangThaiLamViec { get; set; }
 

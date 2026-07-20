@@ -9,6 +9,10 @@ Bạn hãy mở thêm một Terminal mới (bấm dấu + ở góc phải bảng
 
 Gõ lệnh để vào thư mục frontend:
 cd frontend
-
+npm install
 Chạy lệnh khởi động:
+
 npm run dev
+
+ SWAGGER
+http://localhost:5000/swagger/index.html

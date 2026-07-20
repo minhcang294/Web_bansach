@@ -1,45 +1,46 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Check } from "lucide-react";
-import { formatCurrency } from "../utils/formatCurrency.js";
-import { useCart } from "../context/CartContext.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "../utils/formatCurrency";
 
 export default function BookCard({ book }) {
-  const { addToCart, loading } = useCart();
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const [justAdded, setJustAdded] = useState(false);
+  if (!book) return null;
 
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    const res = await addToCart(book.id, 1);
-    if (res.success) {
-      setJustAdded(true);
-      setTimeout(() => setJustAdded(false), 1500);
-    }
-  };
+  // Hỗ trợ đọc dữ liệu linh hoạt (kể cả khi API trả về MASACH hay id)
+  const id = book.MASACH || book.id;
+  const title = book.TENSACH || book.title;
+  const image = book.ANHSACH || book.imageUrl || "https://via.placeholder.com/200x300?text=Chua+co+anh";
+  const price = book.GIABAN || book.price || 0;
+  
+  // Giả lập giảm giá 10% nếu trong CSDL chưa có cột discount
+  const discount = book.discount || 10; 
+  const originalPrice = book.originalPrice || Math.round(price / (1 - discount / 100));
 
   return (
-    <Link to={`/books/${book.id}`} className="book-card">
-      <img src={book.imageUrl} alt={book.title} className="book-card-img" loading="lazy" />
-      <div className="book-card-body">
-        <span className="book-card-cat">{book.categoryName}</span>
-        <h3 className="book-card-title">{book.title}</h3>
-        <span className="book-card-author">{book.author}</span>
-        <div className="book-card-footer">
-          <span className="book-card-price">{formatCurrency(book.price)}</span>
-          {book.stockQuantity > 0 ? (
-            <button className="add-cart-btn" onClick={handleAdd} disabled={loading} aria-label="Thêm vào giỏ">
-              {justAdded ? <Check size={16} /> : <ShoppingCart size={15} />}
-            </button>
-          ) : (
-            <span className="stock-out">Hết hàng</span>
+    <Link to={`/books/${id}`} className="book-card">
+      <div className="book-image-wrapper">
+        
+        {/* Badge giảm giá kiểu Kim Đồng (Hình tròn đỏ góc phải) */}
+        {discount > 0 && (
+          <div className="discount-badge">
+            -{discount}%
+          </div>
+        )}
+
+        <img
+          src={image}
+          alt={title}
+          className="book-image"
+          onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/200x300?text=Loi+Anh" }}
+        />
+      </div>
+
+      <div className="book-info">
+        <h3 className="book-title">{title}</h3>
+        
+        <div className="book-price-wrapper">
+          <span className="book-price">{formatCurrency(price)}</span>
+          {discount > 0 && (
+            <span className="old-price">{formatCurrency(originalPrice)}</span>
           )}
         </div>
       </div>

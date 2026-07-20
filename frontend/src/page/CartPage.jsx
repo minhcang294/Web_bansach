@@ -16,66 +16,141 @@ export default function CartPage() {
     if (!res.success) setError(res.message);
   };
 
+  // Trạng thái: Giỏ hàng trống
   if (cart.items.length === 0) {
     return (
-      <div className="container page-wrap">
-        <div className="empty-state">
-          <ShoppingBag size={40} style={{ marginBottom: 12, opacity: 0.5 }} />
-          <p>Giỏ hàng của bạn đang trống.</p>
-          <Link to="/books" className="btn btn-primary" style={{ marginTop: 16, display: "inline-flex" }}>
-            Tiếp tục mua sắm
-          </Link>
-        </div>
+      <div className="container" style={{ padding: "80px 20px", textAlign: "center", minHeight: "50vh" }}>
+        <ShoppingBag size={64} style={{ marginBottom: 16, color: "#ccc" }} />
+        <h3 style={{ fontSize: 24, marginBottom: 10, color: "#333" }}>Giỏ hàng của bạn đang trống</h3>
+        <p style={{ color: "#777", marginBottom: 20 }}>Hãy quay lại trang chủ để chọn những cuốn sách thật hay nhé!</p>
+        <Link to="/books" style={{ display: "inline-flex", padding: "12px 24px", background: "#e60023", color: "white", borderRadius: "8px", fontWeight: 700 }}>
+          Tiếp tục mua sắm
+        </Link>
       </div>
     );
   }
 
+  // Trạng thái: Có sản phẩm
   return (
-    <div className="container page-wrap">
-      <h2 className="section-title">Giỏ hàng của bạn</h2>
-      {error && <p className="form-error">{error}</p>}
+    <div className="container" style={{ padding: "40px 20px", minHeight: "70vh" }}>
+      <h2 style={{ fontSize: 28, color: "#333", marginBottom: 30, borderBottom: "2px solid #e60023", paddingBottom: 10, display: "inline-block" }}>
+        Giỏ hàng của bạn
+      </h2>
+      
+      {error && (
+        <p style={{ color: "#dc2626", background: "#fee2e2", padding: "10px 15px", borderRadius: 6, marginBottom: 20 }}>
+          {error}
+        </p>
+      )}
 
-      <div style={{ display: "flex", gap: 28, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <div className="card" style={{ flex: "2 1 420px", overflow: "hidden" }}>
-          {cart.items.map((item) => (
-            <div className="cart-item-row" key={item.id}>
-              <img src={item.imageUrl} alt={item.title} className="cart-item-img" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 700, color: "var(--wine-dark)", margin: "0 0 4px", fontSize: 14.5 }}>{item.title}</p>
-                <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>{formatCurrency(item.price)}</p>
+      {/* Vùng chia 2 cột */}
+      <div style={{ display: "flex", gap: "30px", flexWrap: "wrap", alignItems: "flex-start" }}>
+        
+        {/* === CỘT TRÁI: DANH SÁCH SẢN PHẨM === */}
+        <div style={{ flex: "1 1 60%", background: "white", borderRadius: 12, boxShadow: "0 4px 15px rgba(0,0,0,0.05)", border: "1px solid #eee" }}>
+          {cart.items.map((item, index) => (
+            <div 
+              key={item.id} 
+              style={{ 
+                display: "flex", 
+                justifyContent: "space-between",
+                alignItems: "center", 
+                gap: "20px", 
+                padding: "20px", 
+                borderBottom: index !== cart.items.length - 1 ? "1px solid #eee" : "none",
+                flexWrap: "wrap" 
+              }}
+            >
+              {/* KHỐI 1: ẢNH + TÊN SÁCH */}
+              <div style={{ display: "flex", gap: "15px", alignItems: "center", flex: "1 1 250px" }}>
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.title} 
+                  style={{ width: "75px", height: "110px", objectFit: "cover", borderRadius: "6px", border: "1px solid #eee", flexShrink: 0 }} 
+                />
+                <div>
+                  <Link to={`/books/${item.id}`} style={{ fontWeight: 700, color: "#333", fontSize: "16px", display: "block", marginBottom: 8, lineHeight: 1.4 }}>
+                    {item.title}
+                  </Link>
+                  <p style={{ fontSize: "14px", color: "#e60023", fontWeight: 600, margin: 0 }}>
+                    {formatCurrency(item.price)}
+                  </p>
+                </div>
               </div>
-              <div className="qty-control">
-                <button onClick={() => handleQtyChange(item, item.quantity - 1)}><Minus size={13} /></button>
-                <span>{item.quantity}</span>
-                <button onClick={() => handleQtyChange(item, item.quantity + 1)} disabled={item.quantity >= item.stockQuantity}>
-                  <Plus size={13} />
+              
+              {/* KHỐI 2: ĐIỀU KHIỂN (SỐ LƯỢNG, GIÁ, XÓA) */}
+              <div style={{ display: "flex", alignItems: "center", gap: "25px", flexWrap: "wrap" }}>
+                <div className="qty-control-custom">
+                  <button onClick={() => handleQtyChange(item, item.quantity - 1)} type="button">
+                    <Minus size={16} />
+                  </button>
+                  <span className="qty-value-custom">{item.quantity}</span>
+                  <button onClick={() => handleQtyChange(item, item.quantity + 1)} disabled={item.quantity >= item.stockQuantity} type="button">
+                    <Plus size={16} />
+                  </button>
+                </div>
+                
+                <p style={{ width: "90px", textAlign: "right", fontWeight: 700, color: "#e60023", fontSize: "16px", margin: 0 }}>
+                  {formatCurrency(item.subtotal)}
+                </p>
+                
+                {/* KHẮC PHỤC LỖI THÙNG RÁC RỚT DÒNG */}
+                <button 
+                  onClick={() => removeItem(item.id)} 
+                  title="Xóa khỏi giỏ hàng"
+                  type="button"
+                  style={{ 
+                    width: "auto",      /* Hủy width: 100% mặc định */
+                    marginTop: 0,       /* Hủy margin-top: 10px mặc định */
+                    background: "none", 
+                    border: "none", 
+                    color: "#999", 
+                    cursor: "pointer", 
+                    padding: "8px", 
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "0.2s" 
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.color = "#e60023"}
+                  onMouseOut={(e) => e.currentTarget.style.color = "#999"}
+                >
+                  <Trash2 size={20} />
                 </button>
               </div>
-              <p style={{ width: 100, textAlign: "right", fontWeight: 700, color: "var(--wine)", margin: 0 }}>
-                {formatCurrency(item.subtotal)}
-              </p>
-              <button className="btn-danger-text" onClick={() => removeItem(item.id)} aria-label="Xóa">
-                <Trash2 size={16} />
-              </button>
+
             </div>
           ))}
         </div>
 
-        <div className="card" style={{ flex: "1 1 260px", padding: 22 }}>
-          <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--wine-dark)", margin: "0 0 16px" }}>Tóm tắt đơn hàng</h3>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, color: "var(--muted)" }}>
+        {/* === CỘT PHẢI: TÓM TẮT ĐƠN HÀNG === */}
+        <div style={{ flex: "1 1 320px", background: "white", padding: "25px", borderRadius: 12, boxShadow: "0 4px 15px rgba(0,0,0,0.05)", border: "1px solid #eee", position: "sticky", top: "100px" }}>
+          <h3 style={{ fontSize: "20px", color: "#333", marginBottom: "20px", borderBottom: "1px solid #eee", paddingBottom: "15px" }}>
+            Tóm tắt đơn hàng
+          </h3>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "15px", marginBottom: "12px", color: "#555" }}>
             <span>Tạm tính ({cart.totalQuantity} sản phẩm)</span>
-            <span>{formatCurrency(cart.totalAmount)}</span>
+            <span style={{ fontWeight: 600, color: "#333" }}>{formatCurrency(cart.totalAmount)}</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 16, color: "var(--muted)" }}>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "15px", marginBottom: "20px", color: "#555" }}>
             <span>Phí vận chuyển</span>
-            <span>Miễn phí</span>
+            <span style={{ color: "#2e7d32", fontWeight: 600 }}>Miễn phí</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 17, fontWeight: 700, color: "var(--wine)", borderTop: "1px solid var(--border)", paddingTop: 14, marginBottom: 20 }}>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "18px", fontWeight: 700, color: "#e60023", borderTop: "2px solid #eee", paddingTop: "20px", marginBottom: "25px" }}>
             <span>Tổng cộng</span>
             <span>{formatCurrency(cart.totalAmount)}</span>
           </div>
-          <button className="btn btn-primary btn-block" onClick={() => navigate("/checkout")}>
+          
+          <button 
+            type="button"
+            onClick={() => navigate("/checkout")}
+            style={{ width: "100%", padding: "14px", background: "#e60023", color: "white", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "16px", cursor: "pointer", transition: "0.3s" }}
+            onMouseOver={(e) => e.currentTarget.style.background = "#c7001b"}
+            onMouseOut={(e) => e.currentTarget.style.background = "#e60023"}
+          >
             Tiến hành thanh toán
           </button>
         </div>

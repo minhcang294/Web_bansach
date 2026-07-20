@@ -39,60 +39,121 @@ export default function BookListPage() {
   };
 
   return (
-    <div className="container page-wrap">
-      <h2 className="section-title">
+    <div className="container" style={{ padding: "40px 20px", minHeight: "70vh" }}>
+      <h2 style={{ fontSize: 28, color: "#e60023", marginBottom: 25, borderBottom: "2px solid #eee", paddingBottom: 15 }}>
         {keyword ? `Kết quả cho "${keyword}"` : "Tất cả sách"}
-        <span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 500, marginLeft: 10 }}>
-          ({result.totalItems} sách)
+        <span style={{ fontSize: 16, color: "#777", fontWeight: 500, marginLeft: 10 }}>
+          ({result.totalItems} cuốn)
         </span>
       </h2>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 28 }}>
+      {/* THANH DANH MỤC */}
+      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "40px" }}>
         <button
-          className="btn btn-sm"
-          style={{ background: !categoryId ? "var(--macaron-dark)" : "white", color: !categoryId ? "white" : "var(--wine)", border: "1.5px solid var(--border)" }}
+          type="button"
+          style={{
+            width: "auto", // Hủy width: 100%
+            marginTop: 0,  // Hủy margin-top
+            background: !categoryId ? "#e60023" : "white",
+            color: !categoryId ? "white" : "#333",
+            border: !categoryId ? "1px solid #e60023" : "1px solid #ddd",
+            padding: "8px 20px",
+            borderRadius: "20px", // Bo tròn dạng viên thuốc
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "14px",
+            transition: "all 0.2s"
+          }}
           onClick={() => updateParam("categoryId", "")}
         >
           Tất cả
         </button>
+        
         {categories.map((c) => (
           <button
             key={c.id}
-            className="btn btn-sm"
+            type="button"
             style={{
-              background: String(c.id) === categoryId ? "var(--macaron-dark)" : "white",
-              color: String(c.id) === categoryId ? "white" : "var(--wine)",
-              border: "1.5px solid var(--border)",
+              width: "auto", 
+              marginTop: 0,
+              background: String(c.id) === categoryId ? "#e60023" : "white",
+              color: String(c.id) === categoryId ? "white" : "#333",
+              border: String(c.id) === categoryId ? "1px solid #e60023" : "1px solid #ddd",
+              padding: "8px 20px",
+              borderRadius: "20px",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "14px",
+              transition: "all 0.2s"
             }}
             onClick={() => updateParam("categoryId", c.id)}
+            onMouseOver={(e) => {
+              if (String(c.id) !== categoryId) {
+                e.currentTarget.style.borderColor = "#e60023";
+                e.currentTarget.style.color = "#e60023";
+              }
+            }}
+            onMouseOut={(e) => {
+              if (String(c.id) !== categoryId) {
+                e.currentTarget.style.borderColor = "#ddd";
+                e.currentTarget.style.color = "#333";
+              }
+            }}
           >
             {c.name}
           </button>
         ))}
       </div>
 
+      {/* LƯỚI SẢN PHẨM */}
       {loading ? (
-        <p style={{ color: "var(--muted)" }}>Đang tải...</p>
+        <p style={{ color: "#777", textAlign: "center", fontSize: "16px", padding: "40px 0" }}>Đang tải dữ liệu...</p>
       ) : result.items.length === 0 ? (
-        <div className="empty-state">Không tìm thấy cuốn sách nào phù hợp.</div>
+        <div style={{ textAlign: "center", padding: "60px 0", background: "#f9f9f9", borderRadius: "12px" }}>
+          <p style={{ fontSize: "18px", color: "#555" }}>Không tìm thấy cuốn sách nào phù hợp.</p>
+        </div>
       ) : (
         <>
           <div className="book-grid">
             {result.items.map((b) => <BookCard key={b.id} book={b} />)}
           </div>
 
+          {/* PHÂN TRANG */}
           {result.totalPages > 1 && (
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 36 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "50px" }}>
               {Array.from({ length: result.totalPages }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
+                  type="button"
                   onClick={() => goToPage(p)}
-                  className="btn btn-sm"
                   style={{
-                    background: p === page ? "var(--macaron-dark)" : "white",
-                    color: p === page ? "white" : "var(--wine)",
-                    border: "1.5px solid var(--border)",
-                    minWidth: 38,
+                    width: "40px",  // Fix kích thước cố định
+                    height: "40px",
+                    marginTop: 0,
+                    padding: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: p === page ? "#e60023" : "white",
+                    color: p === page ? "white" : "#333",
+                    border: p === page ? "1px solid #e60023" : "1px solid #ddd",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    fontSize: "15px",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => {
+                    if (p !== page) {
+                      e.currentTarget.style.borderColor = "#e60023";
+                      e.currentTarget.style.color = "#e60023";
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (p !== page) {
+                      e.currentTarget.style.borderColor = "#ddd";
+                      e.currentTarget.style.color = "#333";
+                    }
                   }}
                 >
                   {p}
