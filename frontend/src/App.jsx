@@ -16,7 +16,7 @@ import LoginPage from "./page/loginpage";
 import RegisterPage from "./page/RegisterPage";
 import OrderHistoryPage from "./page/OrderHistoryPage";
 import OrderDetailPage from "./page/OrderDetailPage";
-
+import ForgotPassword from './page/ForgotPassword';
 // ================= PAGES (ADMIN) =================
 import Dashboard from "./page/Dashboard";
 import BookManagement from "./page/BookManagement";
@@ -26,6 +26,7 @@ import UserManagement from "./page/UserManagement";
 // ================= CONTEXTS =================
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
+import { Link } from 'react-router-dom';
 
 import "./App.css";
 
@@ -46,7 +47,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 const AppLayout = () => {
   const { pathname } = useLocation();
   // Ẩn Header/Footer ở trang đăng nhập, đăng ký và khu vực Admin
-  const hideLayout = pathname === "/login" || pathname === "/register" || pathname.startsWith("/admin");
+  const hideLayout = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname.startsWith("/admin");
 
   return (
     <div className="app">
@@ -66,6 +67,7 @@ const AppLayout = () => {
           <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />
           <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* ================= ADMIN ROUTES ================= */}
           <Route 

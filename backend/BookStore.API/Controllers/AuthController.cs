@@ -2,6 +2,7 @@ using BookStore.API.Models.DTOs.Auth;
 using BookStore.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BookStore.API.Services.Implementations;
 
 namespace BookStore.API.Controllers;
 
@@ -10,10 +11,13 @@ namespace BookStore.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IEmailService _emailService;
 
-    public AuthController(IAuthService authService)
+    // ĐÃ SỬA LỖI Ở DÒNG NÀY: Thêm IEmailService emailService vào tham số
+    public AuthController(IAuthService authService, IEmailService emailService)
     {
         _authService = authService;
+        _emailService = emailService;
     }
 
     [HttpPost("login")]
@@ -57,6 +61,39 @@ public class AuthController : ControllerBase
         catch (Exception)
         {
             return StatusCode(500, new { message = "Đã xảy ra lỗi khi đăng ký." });
+        }
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
+    {
+        if (string.IsNullOrEmpty(request.Email))
+            return BadRequest("Email không được để trống.");
+        var userExists = true; // Giả sử email có tồn tại
+        
+        if (!userExists)
+        {
+            return BadRequest("Email không tồn tại trong hệ thống.");
+        }
+        string resetToken = Guid.NewGuid().ToString(); 
+        string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&token={resetToken}";
+        string emailSubject = "Yêu cầu khôi phục mật khẩu - Hệ Thống Bán Sách";
+        string emailBody = $@"
+            <h3>Xin chào!</h3>
+            <p>Bạn vừa yêu cầu đặt lại mật khẩu. Vui lòng click vào đường dẫn bên dưới để tạo mật khẩu mới:</p>
+            <a href='{resetLink}' style='display:inline-block; padding:10px 20px; background-color:#3498db; color:white; text-decoration:none; border-radius:5px;'>Đặt lại mật khẩu</a>
+            <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
+            <p>Trân trọng!</p>";
+
+        try
+        {
+            await _emailService.SendEmailAsync(request.Email, emailSubject, emailBody);
+            return Ok(new { message = "Email khôi phục đã được gửi thành công." });
+        }
+        catch (Exception ex)
+        {
+            // Ghi log lỗi nếu cần thiết
+            return StatusCode(500, "Lỗi khi gửi email: " + ex.Message);
         }
     }
 

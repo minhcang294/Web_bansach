@@ -29,6 +29,9 @@ builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+// ĐÃ THÊM DÒNG NÀY ĐỂ SỬA LỖI IEmailService
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddSingleton<JwtTokenGenerator>();
 
 builder.Services.AddControllers();

@@ -184,8 +184,8 @@ export default function LoginPage() {
                   />
                   <span style={styles.checkboxLabel}>Ghi nhớ đăng nhập</span>
                 </label>
-                <Link to="/forgot-password" className="macaron-link" style={styles.forgotLink}>
-                  Quên mật khẩu?
+                <Link to="/forgot-password" style={{ color: '#3498db', textDecoration: 'none', fontSize: '14px' }}>
+                 Quên mật khẩu?
                 </Link>
               </div>
 
