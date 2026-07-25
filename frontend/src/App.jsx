@@ -17,16 +17,17 @@ import RegisterPage from "./page/RegisterPage";
 import OrderHistoryPage from "./page/OrderHistoryPage";
 import OrderDetailPage from "./page/OrderDetailPage";
 import ForgotPassword from './page/ForgotPassword';
-// ================= PAGES (ADMIN) =================
+
+// ================= PAGES (ADMIN & STAFF) =================
 import Dashboard from "./page/Dashboard";
 import BookManagement from "./page/BookManagement";
 import OrderManagement from "./page/OrderManagement";
 import UserManagement from "./page/UserManagement"; 
+import StaffDashboard from "./page/StaffDashboard"; // Đã thêm import trang Nhân Viên
 
 // ================= CONTEXTS =================
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
-import { Link } from 'react-router-dom';
 
 import "./App.css";
 
@@ -46,7 +47,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
 const AppLayout = () => {
   const { pathname } = useLocation();
-  // Ẩn Header/Footer ở trang đăng nhập, đăng ký và khu vực Admin
+  // Ẩn Header/Footer ở trang đăng nhập, đăng ký, quên mật khẩu và khu vực Admin
   const hideLayout = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname.startsWith("/admin");
 
   return (
@@ -61,13 +62,24 @@ const AppLayout = () => {
           <Route path="/books/:id" element={<BookDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* ================= USER ROUTES ================= */}
           <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />
           <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          {/* ================= STAFF ROUTES ================= */}
+          {/* Phân quyền bảo mật: Chỉ cho phép tài khoản Staff truy cập */}
+          <Route 
+            path="/staff" 
+            element={
+              <ProtectedRoute allowedRoles={["Staff"]}>
+                <StaffDashboard />
+              </ProtectedRoute>
+            } 
+          />
 
           {/* ================= ADMIN ROUTES ================= */}
           <Route 

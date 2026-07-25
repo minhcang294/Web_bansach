@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaSearch, FaShoppingCart, FaClipboardList, FaBars, FaCog } from "react-icons/fa"; // Đã thêm FaCog
+// Đã thêm FaUserTie cho nút Nhân Viên
+import { FaSearch, FaShoppingCart, FaClipboardList, FaBars, FaCog, FaUserTie } from "react-icons/fa"; 
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
@@ -37,7 +38,7 @@ export default function Header() {
                     <Link 
                       to="/admin" 
                       style={{
-                        color: "#3498db", // Màu xanh dương để nổi bật, phân biệt với nút Đăng xuất
+                        color: "#3498db", // Màu xanh dương
                         fontWeight: "700",
                         textDecoration: "none",
                         fontSize: "14px",
@@ -53,6 +54,29 @@ export default function Header() {
                 )}
                 {/* ===================================== */}
 
+                {/* ===== NÚT DÀNH RIÊNG CHO NHÂN VIÊN ===== */}
+                {user?.role === "Staff" && (
+                  <>
+                    <span style={{ color: "#ccc" }}>|</span>
+                    <Link 
+                      to="/staff" 
+                      style={{
+                        color: "#e74c3c", // Màu đỏ cho nổi bật như bạn muốn
+                        fontWeight: "700",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        textTransform: "uppercase",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px"
+                      }}
+                    >
+                      <FaUserTie /> Nhân viên
+                    </Link>
+                  </>
+                )}
+                {/* ===================================== */}
+
                 <span style={{ color: "#ccc" }}>|</span>
 
                 <button 
@@ -60,7 +84,7 @@ export default function Header() {
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "var(--primary, #e74c3c)", // Ưu tiên màu đỏ
+                    color: "var(--primary, #e74c3c)",
                     fontWeight: "700",
                     cursor: "pointer",
                     fontSize: "14px",
