@@ -17,10 +17,21 @@ public class ApplicationDbContext : DbContext
     public DbSet<GioHang> GioHangs => Set<GioHang>();
     public DbSet<HoaDon> HoaDons => Set<HoaDon>();
     public DbSet<ChiTietHoaDon> ChiTietHoaDons => Set<ChiTietHoaDon>();
+    
+    // ===== BỔ SUNG CHO MỤC NHẬP KHO =====
+    public DbSet<PhieuNhap> PhieuNhaps => Set<PhieuNhap>();
+    public DbSet<ChiTietPhieuNhap> ChiTietPhieuNhaps => Set<ChiTietPhieuNhap>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // ===== DANHMUC: Cấu hình liên kết Cha - Con (Tự tham chiếu) =====
+        modelBuilder.Entity<DanhMuc>()
+            .HasOne<DanhMuc>()
+            .WithMany()
+            .HasForeignKey(d => d.ParentId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         // ===== GOM: khóa chính kép Sách-DanhMục =====
         modelBuilder.Entity<Gom>().HasKey(g => new { g.MaSach, g.MaDanhMuc });
@@ -62,9 +73,19 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ChiTietHoaDon>()
             .HasOne(c => c.Sach).WithMany().HasForeignKey(c => c.MaSach);
 
-        // Lưu ý: dữ liệu mẫu (danh mục, sách, nhà cung cấp, khuyến mãi) được chèn trực tiếp
-        // trong file database/BANSACH_corrected.sql - KHÔNG dùng HasData() ở đây, vì database
-        // được tạo thủ công bằng SQL script (không qua EF Migrations) nên HasData sẽ không tự chạy.
-        // Tài khoản test (KHACHHANG/NHANVIEN) do DbSeeder.cs tạo lúc chạy app (cần BCrypt.HashPassword runtime).
+        // ===== PHIEUNHAP & CHITIETPHIEUNHAP (MỚI) =====
+        modelBuilder.Entity<PhieuNhap>()
+            .HasOne(p => p.NhaCungCap).WithMany().HasForeignKey(p => p.MaNhaCungCap);
+        modelBuilder.Entity<PhieuNhap>()
+            .HasOne(p => p.NhanVien).WithMany().HasForeignKey(p => p.MaNhanVien);
+
+        modelBuilder.Entity<ChiTietPhieuNhap>().Property(c => c.MaCtPn).ValueGeneratedOnAdd();
+        modelBuilder.Entity<ChiTietPhieuNhap>()
+            .HasOne(c => c.PhieuNhap).WithMany(p => p.ChiTietPhieuNhaps).HasForeignKey(c => c.MaPhieuNhap)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ChiTietPhieuNhap>()
+            .HasOne(c => c.Sach).WithMany().HasForeignKey(c => c.MaSach);
+
+        // Lưu ý: dữ liệu mẫu được chèn trực tiếp trong database/BANSACH_corrected.sql
     }
 }

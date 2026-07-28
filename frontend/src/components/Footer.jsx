@@ -22,10 +22,10 @@ export default function Footer() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "25px", fontSize: "14px" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <MapPin size={18} color="#e60023" /> 97 Lê Thanh Nghị, Hà Nội
+                <MapPin size={18} color="#e60023" /> 126 Nguyễn Thiện Thành
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <Phone size={18} color="#e60023" /> 1900 571595
+                <Phone size={18} color="#e60023" /> 03636363636
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <Mail size={18} color="#e60023" /> hotro@hieusach.com

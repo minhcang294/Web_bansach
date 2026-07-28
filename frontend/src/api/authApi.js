@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Đổi cổng theo backend thực tế (xem launchSettings.json của BookStore.API, thường là 5000/5001)
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://localhost:5001/api";
+// LƯU Ý: Hãy thay thế số "5001" bên dưới thành cổng (port) thực tế mà Backend của bạn đang chạy (Ví dụ: 7146)
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://localhost:5000/api";
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
@@ -37,6 +37,10 @@ export const authApi = {
   // Khớp với AuthController.cs -> [HttpPost("register")]
   register: (fullName, email, password) =>
     axiosClient.post("/auth/register", { fullName, email, password }),
+
+  // Khớp với AuthController.cs -> [HttpPost("google-login")] (Mới thêm)
+  googleLogin: (tokenId) =>
+    axiosClient.post("/auth/google-login", { TokenId: tokenId }),
 
   logout: () => {
     localStorage.removeItem("accessToken");

@@ -11,6 +11,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "axios": "^1.7.7",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.383.0",

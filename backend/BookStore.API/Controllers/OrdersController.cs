@@ -8,7 +8,7 @@ namespace BookStore.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Yêu cầu đăng nhập cho tất cả các hành động trong Controller này
+[Authorize] 
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
@@ -18,7 +18,6 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
-    /// <summary>Tạo đơn hàng từ giỏ hàng hiện tại của user đang đăng nhập.</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] OrderCreateDto dto)
     {
@@ -28,33 +27,31 @@ public class OrdersController : ControllerBase
             var order = await _orderService.CreateOrderAsync(this.GetUserId(), dto);
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
         }
-        catch (CartException ex)
+        catch (Exception ex)
         {
-            return StatusCode(ex.StatusCode, new { message = ex.Message });
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-    /// <summary>Lịch sử đơn hàng của user đang đăng nhập.</summary>
-    [HttpGet]
+    // ĐÃ SỬA DÒNG NÀY: Xóa "my-orders" để trả về đường dẫn gốc /api/orders cho lệnh GET
+    [HttpGet] 
     public async Task<IActionResult> GetMyOrders() 
     {
         return Ok(await _orderService.GetMyOrdersAsync(this.GetUserId()));
     }
 
-    /// <summary>Lấy tất cả đơn hàng (Dành riêng cho Admin).</summary>
     [HttpGet("all")] 
-    [Authorize(Roles = "Admin")] // Chỉ tài khoản có Role là "Admin" mới được phép gọi
+    [Authorize(Roles = "Admin")] 
     public async Task<IActionResult> GetAllOrdersForAdmin()
     {
         try
         {
-            // Gọi hàm từ Service để lấy toàn bộ danh sách đơn hàng
             var allOrders = await _orderService.GetAllOrdersAsync();
             return Ok(allOrders);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy danh sách đơn hàng: " + ex.Message });
+            return StatusCode(500, new { message = "Lỗi khi lấy danh sách: " + ex.Message });
         }
     }
 
@@ -65,19 +62,39 @@ public class OrdersController : ControllerBase
         return order is null ? NotFound(new { message = "Không tìm thấy đơn hàng." }) : Ok(order);
     }
 
-    /// <summary>Cập nhật trạng thái đơn hàng (Dành cho Admin).</summary>
+    /// <summary>Cập nhật trạng thái (Admin đổi mọi trạng thái, Khách chỉ được hủy)</summary>
     [HttpPut("{id}/status")]
-    [Authorize(Roles = "Admin")]
+    // TUYỆT ĐỐI KHÔNG ĐỂ [Authorize(Roles = "Admin")] Ở ĐÂY
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] OrderStatusUpdateDto dto)
     {
         try
         {
+            var userId = this.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+
+            // NẾU LÀ KHÁCH HÀNG:
+            if (!isAdmin)
+            {
+                // Kiểm tra trạng thái gửi lên (Dùng OrdinalIgnoreCase để tránh lỗi chữ hoa chữ thường)
+                if (string.IsNullOrEmpty(dto.Status) || !dto.Status.Equals("DaHuy", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Cố tình trả về 400 thay vì 403 để phân biệt với lỗi của hệ thống phân quyền
+                    return BadRequest(new { message = $"Bạn chỉ được phép hủy đơn. Dữ liệu bạn gửi lên đang là: '{dto.Status}'" });
+                }
+
+                var order = await _orderService.GetByIdAsync(userId, id);
+                if (order == null)
+                {
+                    return NotFound(new { message = "Không tìm thấy đơn hàng hoặc đơn hàng không thuộc về bạn." });
+                }
+            }
+
             await _orderService.UpdateStatusAsync(id, dto.Status);
             return Ok(new { message = "Cập nhật trạng thái thành công." });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = "Lỗi xử lý Backend: " + ex.Message });
         }
     }
 }

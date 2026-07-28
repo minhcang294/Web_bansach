@@ -142,7 +142,7 @@ export default function HomePage() {
           <Link to="/books">Xem tất cả →</Link>
         </div>
         <div className="category-grid">
-          {["Thiếu nhi", "Manga", "Văn học", "Kinh tế", "Ngoại ngữ", "Kỹ năng", "Tâm lý", "Lịch sử"].map((item) => (
+          {["Văn học",  "Kỹ năng",  "Kinh tế",  "Thiếu nhi",  "Manga - Comic",  "Ngoại ngữ",  "Tâm lý",  "Tiểu thuyết"].map((item) => (
             <div key={item} className="category-item">
               {item}
             </div>

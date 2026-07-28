@@ -3,6 +3,8 @@ using BookStore.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BookStore.API.Services.Implementations;
+using Google.Apis.Auth; 
+using Microsoft.Extensions.Configuration; 
 
 namespace BookStore.API.Controllers;
 
@@ -12,12 +14,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    // ĐÃ SỬA LỖI Ở DÒNG NÀY: Thêm IEmailService emailService vào tham số
-    public AuthController(IAuthService authService, IEmailService emailService)
+    public AuthController(IAuthService authService, IEmailService emailService, IConfiguration configuration)
     {
         _authService = authService;
         _emailService = emailService;
+        _configuration = configuration;
     }
 
     [HttpPost("login")]
@@ -32,13 +35,60 @@ public class AuthController : ControllerBase
             var result = await _authService.LoginAsync(dto);
             return Ok(result);
         }
-        catch (AuthException ex) // Ưu tiên bắt lỗi đặc thù trước
+        catch (AuthException ex)
         {
             return StatusCode(ex.StatusCode, new { message = ex.Message });
         }
         catch (Exception)
         {
             return StatusCode(500, new { message = "Đã xảy ra lỗi hệ thống." });
+        }
+    }
+
+    // ====================================================================
+    // API ĐĂNG NHẬP BẰNG GOOGLE (ĐÃ TỐI ƯU TRẢ VỀ TOKEN & USER)
+    // ====================================================================
+    [HttpPost("google-login")]
+    [ProducesResponseType(typeof(AuthResponseDto), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(500)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+    {
+        if (string.IsNullOrEmpty(request?.TokenId))
+        {
+            return BadRequest(new { message = "Token Google không được để trống." });
+        }
+
+        try
+        {
+            // 1. Cấu hình kiểm tra Audience với ClientId từ appsettings.json
+            var settings = new GoogleJsonWebSignature.ValidationSettings()
+            {
+                Audience = new List<string>() { _configuration["GoogleAuth:ClientId"] }
+            };
+
+            // 2. Xác thực TokenId gửi lên từ Frontend (React)
+            var payload = await GoogleJsonWebSignature.ValidateAsync(request.TokenId, settings);
+            
+            string userEmail = payload.Email;
+            string userName = payload.Name;
+
+            // 3. Gọi Service xử lý nghiệp vụ Database (Tự động tạo user nếu chưa có và sinh Token)
+            var result = await _authService.GoogleLoginAsync(userEmail, userName);
+
+            return Ok(result);
+        }
+        catch (InvalidJwtException)
+        {
+            return BadRequest(new { message = "Token Google không hợp lệ hoặc đã bị chỉnh sửa." });
+        }
+        catch (AuthException ex)
+        {
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi hệ thống khi đăng nhập Google: " + ex.Message });
         }
     }
 
@@ -68,13 +118,15 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
     {
         if (string.IsNullOrEmpty(request.Email))
-            return BadRequest("Email không được để trống.");
-        var userExists = true; // Giả sử email có tồn tại
+            return BadRequest(new { message = "Email không được để trống." });
+        
+        var userExists = true; 
         
         if (!userExists)
         {
-            return BadRequest("Email không tồn tại trong hệ thống.");
+            return BadRequest(new { message = "Email không tồn tại trong hệ thống." });
         }
+        
         string resetToken = Guid.NewGuid().ToString(); 
         string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&token={resetToken}";
         string emailSubject = "Yêu cầu khôi phục mật khẩu - Hệ Thống Bán Sách";
@@ -92,8 +144,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Ghi log lỗi nếu cần thiết
-            return StatusCode(500, "Lỗi khi gửi email: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi khi gửi email: " + ex.Message });
         }
     }
 

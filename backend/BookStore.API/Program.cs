@@ -28,8 +28,6 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-
-// ĐÃ THÊM DÒNG NÀY ĐỂ SỬA LỖI IEmailService
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSingleton<JwtTokenGenerator>();
@@ -56,7 +54,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     };
 });
 
-// 4. CORS - Đã cấu hình cho phép localhost:3000 và 5173
+// 4. CORS - Cho phép localhost:3000 và 5173
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -94,6 +92,12 @@ app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BookStore API v1"));
 
 app.UseHttpsRedirection();
+
+// =================================================================
+// ĐÃ THÊM: Cho phép truy cập file tĩnh (để đọc ảnh trong thư mục wwwroot)
+// =================================================================
+app.UseStaticFiles(); 
+
 app.UseCors("AllowAll"); 
 app.UseAuthentication();
 app.UseAuthorization();

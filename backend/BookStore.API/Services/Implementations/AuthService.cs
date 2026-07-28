@@ -68,6 +68,45 @@ public class AuthService : IAuthService
         return BuildAuthResponse(newKhachHang.MaKhachHang, newKhachHang.Email, newKhachHang.HoTenKh ?? "", "Customer");
     }
 
+    // ====================================================================
+    // ĐĂNG NHẬP / ĐĂNG KÝ BẰNG GOOGLE (MỚI BỔ SUNG)
+    // ====================================================================
+    public async Task<AuthResponseDto> GoogleLoginAsync(string email, string name)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new AuthException("Email từ Google không hợp lệ.", 400);
+
+        // 1. Kiểm tra xem email đã tồn tại trong bảng Khách hàng chưa
+        var khachHang = await _khachHangRepository.GetByEmailAsync(email);
+
+        if (khachHang != null)
+        {
+            // Nếu tài khoản đã tồn tại nhưng bị khóa
+            if (khachHang.TrangThai == 0) 
+                throw new AuthException("Tài khoản đã bị khóa.", 403);
+
+            return BuildAuthResponse(khachHang.MaKhachHang, khachHang.Email, khachHang.HoTenKh ?? "Khách hàng", "Customer");
+        }
+
+        // 2. Nếu chưa tồn tại, tự động tạo tài khoản Khách hàng mới cho người dùng Google
+        var maKhachHang = "KH" + DateTime.UtcNow.Ticks.ToString()[^8..];
+        var newKhachHang = new KhachHang
+        {
+            MaKhachHang = maKhachHang,
+            TenDangNhap = email,
+            MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), // Mật khẩu ngẫu nhiên vì dùng Google
+            HoTenKh = !string.IsNullOrWhiteSpace(name) ? name : email.Split('@')[0],
+            Email = email,
+            NgayDk = DateTime.UtcNow,
+            TrangThai = 1
+        };
+
+        await _khachHangRepository.AddAsync(newKhachHang);
+
+        // 3. Trả về thông tin đăng nhập thành công kèm JWT Token
+        return BuildAuthResponse(newKhachHang.MaKhachHang, newKhachHang.Email, newKhachHang.HoTenKh ?? "", "Customer");
+    }
+
     public async Task<object> GetAllUsersAsync()
     {
         var users = new List<object>();

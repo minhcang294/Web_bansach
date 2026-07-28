@@ -7,6 +7,9 @@ public interface IAuthService
     Task<AuthResponseDto> LoginAsync(LoginDto dto);
     Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
     
+    // Thêm hàm GoogleLoginAsync để hỗ trợ xác thực và tạo token khi đăng nhập bằng Google
+    Task<AuthResponseDto> GoogleLoginAsync(string email, string name);
+    
     // Các hàm quản lý người dùng dành cho Admin
     Task<object> GetAllUsersAsync(); 
     Task DeleteUserAsync(string userId);

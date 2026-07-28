@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, BookOpen } from "lucide-react";
 import { authApi } from "../api/authApi.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { GoogleLogin } from '@react-oauth/google';
 
 /**
  * Trang đăng nhập - Website bán sách
@@ -64,18 +65,49 @@ export default function LoginPage() {
     }
   };
 
+  // ================= XỬ LÝ ĐĂNG NHẬP GOOGLE =================
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setLoading(true);
+      setErrorMsg("");
+
+      // Gọi API đăng nhập Google qua authApi
+      const response = await authApi.googleLogin(credentialResponse.credential);
+      const { token, user } = response.data;
+
+      // Lưu token và thông tin user vào localStorage y như đăng nhập thường
+      localStorage.setItem("accessToken", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Cập nhật trạng thái vào AuthContext để hiển thị tên người dùng ngay lập tức
+      login(user);
+
+      // Chuyển hướng về trang chủ
+      navigate("/");
+
+    } catch (err) {
+      if (err.response?.data?.message) {
+        setErrorMsg(err.response.data.message);
+      } else if (err.code === "ERR_NETWORK") {
+        setErrorMsg("Không thể kết nối tới máy chủ cổng 5000.");
+      } else {
+        setErrorMsg("Lỗi xác thực Google từ máy chủ.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Quicksand:wght@400;500;600;700&display=swap');
         
-        /* Hiệu ứng focus cho container bọc ngoài input */
         .macaron-input-container:focus-within { 
           border-color: #C97874 !important; 
           box-shadow: 0 0 0 3px rgba(201,120,116,0.15) !important; 
         }
         
-        /* Ghi đè màu xanh tự động điền (autofill) của Chrome */
         .macaron-input:-webkit-autofill,
         .macaron-input:-webkit-autofill:hover, 
         .macaron-input:-webkit-autofill:focus, 
@@ -129,7 +161,6 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} noValidate>
               <label style={styles.label} htmlFor="email">Email</label>
               
-              {/* Box Input Email sử dụng Flexbox */}
               <div className="macaron-input-container" style={styles.inputContainer}>
                 <div style={styles.iconBox}>
                   <Mail size={17} color="#B0827E" />
@@ -148,7 +179,6 @@ export default function LoginPage() {
 
               <label style={{ ...styles.label, marginTop: 18 }} htmlFor="password">Mật khẩu</label>
               
-              {/* Box Input Mật khẩu sử dụng Flexbox (Mắt sẽ tự động bị đẩy qua phải) */}
               <div className="macaron-input-container" style={styles.inputContainer}>
                 <div style={styles.iconBox}>
                   <Lock size={17} color="#B0827E" />
@@ -207,10 +237,18 @@ export default function LoginPage() {
               <span style={styles.dividerLine} />
             </div>
 
-            <button type="button" style={styles.googleBtn} disabled>
-              <GoogleIcon />
-              Đăng nhập với Google
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  setErrorMsg("Cửa sổ đăng nhập Google gặp lỗi hoặc bị đóng.");
+                }}
+                theme="outline"
+                size="large"
+                width="100%"
+                text="signin_with"
+              />
+            </div>
 
             <p style={styles.bottomText}>
               Chưa có tài khoản?{" "}
@@ -247,17 +285,6 @@ function BookIllustration() {
         <ellipse cx="0" cy="0" rx="26" ry="5" fill="#C97874" />
         <path d="M-26,0 A26,18 0 0 0 0,18 A26,18 0 0 0 26,0" fill="none" stroke="#6E3335" strokeWidth="1.2" opacity="0.5" />
       </g>
-    </svg>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
-      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z" />
-      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.94v2.33A9 9 0 0 0 9 18z" />
-      <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.94A9 9 0 0 0 0 9c0 1.45.35 2.83.94 4.03l3.01-2.33z" />
-      <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.97l3.01 2.33C4.66 5.17 6.65 3.58 9 3.58z" />
     </svg>
   );
 }
@@ -319,7 +346,6 @@ const styles = {
   subtitle: { fontSize: 14, color: "#9A7A78", margin: "0 0 28px" },
   label: { display: "block", fontSize: 13, fontWeight: 600, color: "#6E3335", marginBottom: 6 },
   
-  /* CẤU TRÚC FLEXBOX MỚI ĐẢM BẢO CHÍNH XÁC 100% VỊ TRÍ ICON */
   inputContainer: {
     display: "flex",
     alignItems: "center",
@@ -339,7 +365,7 @@ const styles = {
     justifyContent: "center",
   },
   flexInput: {
-    flex: 1, /* Đẩy icon mắt sát qua mép phải */
+    flex: 1, 
     height: "100%",
     width: "100%",
     background: "transparent",
@@ -350,20 +376,19 @@ const styles = {
     color: "#4A3230",
     outline: "none",
   },
- eyeBtnFlex: {
-  width: 42,
-  height: "100%",
-  flexShrink: 0,
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  paddingRight: 20,
-  paddingLeft: 0,
-},
-  
+  eyeBtnFlex: {
+    width: 42,
+    height: "100%",
+    flexShrink: 0,
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingRight: 20,
+    paddingLeft: 0,
+  },
   rowBetween: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, marginBottom: 22 },
   checkboxRow: { display: "flex", alignItems: "center", gap: 7, cursor: "pointer" },
   checkbox: { width: 15, height: 15, cursor: "pointer" },
@@ -381,13 +406,6 @@ const styles = {
   dividerRow: { display: "flex", alignItems: "center", gap: 10, margin: "22px 0" },
   dividerLine: { flex: 1, height: 1, background: "#F0DAD8" },
   dividerText: { fontSize: 12, color: "#B79693" },
-  googleBtn: {
-    width: "100%", height: 44, borderRadius: 12, border: "1.5px solid #F0DAD8",
-    background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center",
-    gap: 10, fontSize: 14, fontWeight: 600, color: "#6E3335",
-    fontFamily: "'Quicksand', sans-serif", cursor: "not-allowed", opacity: 0.6,
-  },
   bottomText: { textAlign: "center", fontSize: 13, color: "#9A7A78", marginTop: 22 },
   bottomLink: { color: "#C97874", fontWeight: 700, textDecoration: "none" },
-  testHint: { textAlign: "center", fontSize: 11, color: "#C7ABA8", marginTop: 14 },
 };

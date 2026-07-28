@@ -17,17 +17,23 @@ import RegisterPage from "./page/RegisterPage";
 import OrderHistoryPage from "./page/OrderHistoryPage";
 import OrderDetailPage from "./page/OrderDetailPage";
 import ForgotPassword from './page/ForgotPassword';
+import SearchPage from "./page/SearchPage"; 
+import AboutPage from "./page/AboutPage";
 
 // ================= PAGES (ADMIN & STAFF) =================
 import Dashboard from "./page/Dashboard";
 import BookManagement from "./page/BookManagement";
+import CategoryManagement from "./page/CategoryManagement"; 
 import OrderManagement from "./page/OrderManagement";
 import UserManagement from "./page/UserManagement"; 
-import StaffDashboard from "./page/StaffDashboard"; // Đã thêm import trang Nhân Viên
+import ReportsPage from "./page/ReportsPage"; 
+import StaffDashboard from "./page/StaffDashboard"; 
+import ImportManagement from "./page/ImportManagement";
 
-// ================= CONTEXTS =================
+// ================= CONTEXTS & PROVIDERS =================
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
+import { GoogleOAuthProvider } from '@react-oauth/google'; 
 
 import "./App.css";
 
@@ -37,7 +43,6 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   
-  // Kiểm tra nếu có phân quyền và role của user không thỏa mãn
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/" replace />;
   }
@@ -47,7 +52,6 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
 const AppLayout = () => {
   const { pathname } = useLocation();
-  // Ẩn Header/Footer ở trang đăng nhập, đăng ký, quên mật khẩu và khu vực Admin
   const hideLayout = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname.startsWith("/admin");
 
   return (
@@ -63,6 +67,8 @@ const AppLayout = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/about" element={<AboutPage />} />
 
           {/* ================= USER ROUTES ================= */}
           <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
@@ -71,7 +77,6 @@ const AppLayout = () => {
           <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
 
           {/* ================= STAFF ROUTES ================= */}
-          {/* Phân quyền bảo mật: Chỉ cho phép tài khoản Staff truy cập */}
           <Route 
             path="/staff" 
             element={
@@ -92,8 +97,11 @@ const AppLayout = () => {
           >
             <Route index element={<Dashboard />} />
             <Route path="books" element={<BookManagement />} />
+            <Route path="categories" element={<CategoryManagement />} /> 
+            <Route path="imports" element={<ImportManagement />} /> {/* <-- THÊM ROUTE QUẢN LÝ NHẬP KHO */}
             <Route path="orders" element={<OrderManagement />} /> 
             <Route path="users" element={<UserManagement />} />
+            <Route path="reports" element={<ReportsPage />} />
           </Route>
 
           {/* Redirect mọi route không hợp lệ về trang chủ */}
@@ -108,10 +116,12 @@ const AppLayout = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <AppLayout />
-      </CartProvider>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId="374277680791-3ippi6k8mjq04l78qk8nvjjgu9oqhlte.apps.googleusercontent.com">
+      <AuthProvider>
+        <CartProvider>
+          <AppLayout />
+        </CartProvider>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }

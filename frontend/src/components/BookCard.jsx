@@ -11,6 +11,9 @@ export default function BookCard({ book }) {
   const image = book.ANHSACH || book.imageUrl || "https://via.placeholder.com/200x300?text=Chua+co+anh";
   const price = book.GIABAN || book.price || 0;
   
+  // Lấy ra số lượng tồn kho (quét nhiều trường hợp tên biến từ backend C#)
+  const stock = book?.stockQuantity ?? book?.soLuongTon ?? book?.soluongTon ?? book?.SOLUONGTON ?? book?.stock ?? 0;
+
   // Giả lập giảm giá 10% nếu trong CSDL chưa có cột discount
   const discount = book.discount || 10; 
   const originalPrice = book.originalPrice || Math.round(price / (1 - discount / 100));
@@ -36,6 +39,41 @@ export default function BookCard({ book }) {
 
       <div className="book-info">
         <h3 className="book-title">{title}</h3>
+        
+        {/* ================= BẮT ĐẦU PHẦN TỒN KHO ================= */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          marginTop: '6px',
+          marginBottom: '10px',
+          fontSize: '13px'
+        }}>
+          <span style={{ color: '#7f8c8d', marginRight: '5px' }}>Còn lại:</span>
+          {stock > 0 ? (
+            <span style={{ 
+              backgroundColor: stock < 5 ? '#fdedec' : '#eafaf1', 
+              color: stock < 5 ? '#e74c3c' : '#27ae60', 
+              padding: '2px 8px', 
+              borderRadius: '12px', 
+              fontWeight: 'bold',
+              fontSize: '11px'
+            }}>
+              {stock} cuốn
+            </span>
+          ) : (
+            <span style={{ 
+              backgroundColor: '#f2f4f4', 
+              color: '#95a5a6', 
+              padding: '2px 8px', 
+              borderRadius: '12px', 
+              fontWeight: 'bold',
+              fontSize: '11px'
+            }}>
+              Hết hàng
+            </span>
+          )}
+        </div>
+        {/* ================= KẾT THÚC PHẦN TỒN KHO ================= */}
         
         <div className="book-price-wrapper">
           <span className="book-price">{formatCurrency(price)}</span>

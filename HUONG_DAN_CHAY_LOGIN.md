@@ -16,3 +16,9 @@ npm run dev
 
  SWAGGER
 http://localhost:5000/swagger/index.html
+docker-compose down
+docker-compose up --build -d
+
+
+
+netstat -ano | findstr :5000

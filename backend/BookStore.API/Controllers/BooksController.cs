@@ -22,6 +22,27 @@ public class BooksController : ControllerBase
         return Ok(result);
     }
 
+    // ====================================================================
+    // API TÌM KIẾM RIÊNG ĐỂ KHỚP VỚI FRONTEND (/api/books/search)
+    // ====================================================================
+    /// <summary>Tìm kiếm sách theo từ khóa. Công khai.</summary>
+    [HttpGet("search")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SearchBooks([FromQuery] string? keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            // Trả về trực tiếp một mảng rỗng để React không bị lỗi
+            return Ok(new List<object>()); 
+        }
+
+        // Gọi logic tìm kiếm từ Service
+        var result = await _bookService.SearchAsync(keyword, null, 1, 50);
+        
+        // QUAN TRỌNG: Chỉ trả về danh sách Items (mảng) để Frontend map được
+        return Ok(result.Items);
+    }
+
     /// <summary>Chi tiết 1 cuốn sách theo mã sách (MASACH). Công khai.</summary>
     [HttpGet("{id}")]
     [AllowAnonymous]

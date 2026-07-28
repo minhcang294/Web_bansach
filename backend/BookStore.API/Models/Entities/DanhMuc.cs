@@ -12,8 +12,16 @@ public class DanhMuc
     [Column("TENDANHMUC"), Required, MaxLength(100)]
     public string TenDanhMuc { get; set; } = string.Empty;
 
+    // Bổ sung thêm cột SLUG
+    [Column("SLUG"), MaxLength(100)]
+    public string? Slug { get; set; }
+
     [Column("MOTA"), MaxLength(255)]
     public string? MoTa { get; set; }
+
+    // Bổ sung thêm cột PARENTID (Danh mục cha)
+    [Column("PARENTID"), MaxLength(20)]
+    public string? ParentId { get; set; }
 
     public ICollection<Gom> Gom { get; set; } = new List<Gom>();
 }

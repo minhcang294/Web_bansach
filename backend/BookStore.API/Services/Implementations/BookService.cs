@@ -40,7 +40,10 @@ public class BookService : IBookService
 
     public async Task<BookDto> CreateAsync(BookCreateDto dto)
     {
-        var maSach = "S" + DateTime.UtcNow.Ticks.ToString()[^9..]; // sinh mã tự động, ví dụ S123456789
+        // Ưu tiên lấy mã sách từ Frontend gửi xuống, nếu để trống mới tự sinh mã
+        var maSach = string.IsNullOrWhiteSpace(dto.Id) 
+            ? "S" + DateTime.UtcNow.Ticks.ToString()[^9..] 
+            : dto.Id;
 
         var sach = new Sach
         {
@@ -50,7 +53,24 @@ public class BookService : IBookService
             NoiDungDemo = dto.Description,
             GiaBan = dto.Price,
             SoLuongTon = dto.StockQuantity,
-            AnhSach = dto.ImageUrl
+            AnhSach = dto.ImageUrl,
+            
+            // ==========================================
+            // [ĐÃ BỔ SUNG] 2 TRƯỜNG QUAN TRỌNG
+            // ==========================================
+            GiamGia = dto.Discount,
+            MaNhaCungCap = dto.MaNhaCungCap,
+            
+            // THÔNG TIN BỔ SUNG
+            NhaCungCap = dto.Supplier,
+            NguoiDich = dto.Translator,
+            NhaXuatBan = dto.Publisher,
+            NamXuatBan = dto.PublishYear,
+            NgonNgu = dto.Language,
+            TrongLuong = dto.Weight,
+            KichThuoc = dto.Dimensions,
+            SoTrang = dto.Pages,
+            HinhThuc = dto.CoverType
         };
 
         await _sachRepository.AddAsync(sach, dto.CategoryId);
@@ -70,6 +90,23 @@ public class BookService : IBookService
         sach.SoLuongTon = dto.StockQuantity;
         sach.AnhSach = dto.ImageUrl;
 
+        // ==========================================
+        // [ĐÃ BỔ SUNG] 2 TRƯỜNG QUAN TRỌNG
+        // ==========================================
+        sach.GiamGia = dto.Discount;
+        sach.MaNhaCungCap = dto.MaNhaCungCap;
+
+        // THÔNG TIN BỔ SUNG
+        sach.NhaCungCap = dto.Supplier;
+        sach.NguoiDich = dto.Translator;
+        sach.NhaXuatBan = dto.Publisher;
+        sach.NamXuatBan = dto.PublishYear;
+        sach.NgonNgu = dto.Language;
+        sach.TrongLuong = dto.Weight;
+        sach.KichThuoc = dto.Dimensions;
+        sach.SoTrang = dto.Pages;
+        sach.HinhThuc = dto.CoverType;
+
         await _sachRepository.UpdateAsync(sach, dto.CategoryId);
         return MapToDto(sach);
     }
@@ -86,10 +123,28 @@ public class BookService : IBookService
             Author = s.TacGia ?? "",
             Description = s.NoiDungDemo ?? "",
             Price = s.GiaBan,
+            
+            // ==========================================
+            // [ĐÃ BỔ SUNG] 2 TRƯỜNG QUAN TRỌNG
+            // ==========================================
+            Discount = s.GiamGia,
+            MaNhaCungCap = s.MaNhaCungCap,
+            
             StockQuantity = s.SoLuongTon,
             ImageUrl = s.AnhSach ?? "",
             CategoryId = firstCategory?.MaDanhMuc ?? "",
-            CategoryName = firstCategory?.TenDanhMuc ?? ""
+            CategoryName = firstCategory?.TenDanhMuc ?? "",
+
+            // THÔNG TIN BỔ SUNG
+            Supplier = s.NhaCungCap,
+            Translator = s.NguoiDich,
+            Publisher = s.NhaXuatBan,
+            PublishYear = s.NamXuatBan,
+            Language = s.NgonNgu,
+            Weight = s.TrongLuong,
+            Dimensions = s.KichThuoc,
+            Pages = s.SoTrang,
+            CoverType = s.HinhThuc
         };
     }
 }
