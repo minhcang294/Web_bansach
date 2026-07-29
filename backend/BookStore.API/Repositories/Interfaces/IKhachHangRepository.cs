@@ -12,4 +12,5 @@ public interface IKhachHangRepository
     Task<List<KhachHang>> GetAllAsync();
     Task<KhachHang?> GetByIdAsync(string id);
     Task DeleteAsync(KhachHang khachHang);
+    Task UpdateAsync(KhachHang khachHang);
 }

@@ -55,4 +55,9 @@ public class KhachHangRepository : IKhachHangRepository
         _context.KhachHangs.Remove(khachHang);
         await _context.SaveChangesAsync();
     }
+    public async Task UpdateAsync(KhachHang khachHang)
+{
+    _context.KhachHangs.Update(khachHang);
+    await _context.SaveChangesAsync();
+}
 }

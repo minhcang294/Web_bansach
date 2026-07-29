@@ -22,6 +22,20 @@ public class AuthService : IAuthService
         _jwtTokenGenerator = jwtTokenGenerator;
     }
 
+    public async Task<bool> EmailExistsAsync(string email)
+{
+    return await _khachHangRepository.EmailExistsAsync(email);
+}
+
+public async Task<bool> ResetPasswordAsync(string email, string newPassword)
+{
+    var khachHang = await _khachHangRepository.GetByEmailAsync(email);
+    if (khachHang == null) return false;
+
+    khachHang.MatKhau = BCrypt.Net.BCrypt.HashPassword(newPassword);
+    await _khachHangRepository.UpdateAsync(khachHang);
+    return true;
+}
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
         // 1. Kiểm tra Nhân viên/Admin

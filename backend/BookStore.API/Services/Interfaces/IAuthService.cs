@@ -13,6 +13,8 @@ public interface IAuthService
     // Các hàm quản lý người dùng dành cho Admin
     Task<object> GetAllUsersAsync(); 
     Task DeleteUserAsync(string userId);
+    Task<bool> EmailExistsAsync(string email);
+    Task<bool> ResetPasswordAsync(string email, string newPassword);
 }
 
 // Class Exception để xử lý lỗi nghiệp vụ (ĐỂ RIÊNG BIỆT)
