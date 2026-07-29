@@ -7,15 +7,19 @@ public interface IAuthService
     Task<AuthResponseDto> LoginAsync(LoginDto dto);
     Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
     
-    // Thêm hàm GoogleLoginAsync để hỗ trợ xác thực và tạo token khi đăng nhập bằng Google
+    // BỔ SUNG: Hàm thêm mới người dùng dành riêng cho Admin (Hỗ trợ phân quyền Admin/Staff/User)
+    Task<AuthResponseDto> CreateUserByAdminAsync(RegisterDto dto);
+    
+    // Đăng nhập / Đăng ký bằng Google
     Task<AuthResponseDto> GoogleLoginAsync(string email, string name);
     
-    // Các hàm quản lý người dùng dành cho Admin
+    // Quản lý người dùng dành cho Admin
     Task<object> GetAllUsersAsync(); 
     Task DeleteUserAsync(string userId);
+    Task UpdateUserAsync(string userId, UpdateUserDto dto);
 }
 
-// Class Exception để xử lý lỗi nghiệp vụ (ĐỂ RIÊNG BIỆT)
+// Class Exception để xử lý lỗi nghiệp vụ
 public class AuthException : Exception
 {
     public int StatusCode { get; }

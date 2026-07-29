@@ -49,7 +49,7 @@ CREATE TABLE SACH (
     TENSACH         nvarchar(200)   NOT NULL,
     TACGIA          nvarchar(100)   NULL,
     GIABAN          decimal(18,2)   NOT NULL DEFAULT 0,
-    GIAMGIA         int             NOT NULL DEFAULT 0, -- [ĐÃ BỔ SUNG] Cột Giảm giá (%)
+    GIAMGIA         int             NOT NULL DEFAULT 0,
     SOLUONGTON      int             NOT NULL DEFAULT 0,
     NOIDUNGDEMO     nvarchar(2000)  NULL,
     LOAISACH        nvarchar(50)    NULL,
@@ -57,7 +57,7 @@ CREATE TABLE SACH (
     SOTRANG         int             NULL,
     NGONNGU         nvarchar(30)    NULL,
     ANHSACH         varchar(500)    NULL,
-    MANHACUNGCAP    varchar(30)     NULL,               -- [ĐÃ BỔ SUNG] Cột Mã nhà cung cấp
+    MANHACUNGCAP    varchar(30)     NULL,
     NHACUNGCAP      nvarchar(150)   NULL,
     NGUOIDICH       nvarchar(100)   NULL,
     NHAXUATBAN      nvarchar(150)   NULL,
@@ -255,14 +255,14 @@ INSERT INTO DANHMUC (MADANHMUC, TENDANHMUC, SLUG, MOTA, PARENTID) VALUES
 ('NN04', N'Tiếng Hàn', 'tieng-han', N'Tài liệu tiếng Hàn Quốc', 'NN');
 GO
 
--- ----- Nhà cung cấp (Tạo trước khi Insert Sách nếu muốn dùng mã nhà cung cấp làm mẫu) -----
+-- ----- Nhà cung cấp -----
 INSERT INTO NHACUNGCAP (MANHACUNGCAP, TENNHACUNGCAP, MOTA) VALUES
 ('NCC01', N'Công ty CP Sách First News', N'Chuyên phát hành sách văn học và kỹ năng sống'),
 ('NCC02', N'NXB Kim Đồng', N'Nhà xuất bản đầu sách thiếu nhi, manga trong nước'),
 ('NCC03', N'NXB Trẻ', N'Chuyên sách kinh tế, văn học');
 GO
 
--- ----- Sách (Đã bao gồm số lượng tồn kho và Giảm giá mẫu) -----
+-- ----- Sách -----
 INSERT INTO SACH (MASACH, TENSACH, TACGIA, GIABAN, GIAMGIA, SOLUONGTON, NOIDUNGDEMO, LOAISACH, NAMXUATBAN, SOTRANG, NGONNGU, ANHSACH, MANHACUNGCAP, NHAXUATBAN) VALUES
 ('S001', N'Nhà Giả Kim', N'Paulo Coelho', 79000, 10, 10, N'Hành trình đi tìm kho báu và ý nghĩa cuộc sống.', N'Văn học', 1988, 228, N'Tiếng Việt', 'https://placehold.co/300x420/e71a22/FFF?text=Nha+Gia+Kim', 'NCC01', N'NXB Hội Nhà Văn'),
 ('S002', N'Sword Art Online - Tập 1', N'Reki Kawahara', 85000, 0, 20, N'Trận chiến sinh tồn trong thế giới ảo.', N'Văn học', 2009, 250, N'Tiếng Việt', 'https://placehold.co/300x420/e71a22/FFF?text=SAO+1', 'NCC03', N'IPM'),
@@ -285,8 +285,11 @@ GO
 
 -- ----- Tài khoản mẫu -----
 INSERT INTO NHANVIEN (MANHANVIEN, TENDANGNHAP, MATKHAU, TENNV, EMAIL, VAITROPHUTRACH, ROLE, TRANGTHAILAMVIEC, TRANGTHAI) VALUES
-('NV001', 'admin', '$2b$11$QLj8z3b7h5FS9dVcdyVYj.DkW0MmndWveQVkx8X5i19/idvI.dQcy', N'Quản Trị Viên', 'admin@bookstore.com', N'Quản trị hệ thống', 'Admin', N'DangLamViec', 1);
+('NV001', 'admin', '$2b$11$QLj8z3b7h5FS9dVcdyVYj.DkW0MmndWveQVkx8X5i19/idvI.dQcy', N'Quản Trị Viên', 'admin@bookstore.com', N'Quản trị hệ thống', 'Admin', N'DangLamViec', 1),
+('NV002', 'staff', '$2a$11$o2EZrqlCD9DvCoV8lsJhQOki5d5b3.FMxOttZ.ARWrmR1zO1iDj7i', N'Nhân Viên Bán Hàng', 'staff@bookstore.com', N'Bán hàng', 'Staff', N'DangLamViec', 1);
 GO
+-- Lấy mật khẩu của tài khoản vừa đăng ký (nó sẽ nằm ở dòng đầu tiên)
+SELECT EMAIL, MATKHAU FROM KHACHHANG ORDER BY NGAYDK DESC;
 
 INSERT INTO KHACHHANG (MAKHACHHANG, TENDANGNHAP, MATKHAU, HOTENKH, EMAIL, SODIENTHOAI, DIACHIKH, TRANGTHAI) VALUES
 ('KH001', 'test@bookstore.com', '$2b$11$UsejvSVoRrxrXybpz6EviuriVOtmqedJnvGGSY5gT9mUWMaUcuof6', N'Người Dùng Test', 'test@bookstore.com', '0900000000', N'123 Đường ABC, Quận 1, TP.HCM', 1);
@@ -309,3 +312,4 @@ GO
 SELECT * FROM PHIEUNHAP;
 SELECT * FROM CHITIETPHIEUNHAP;
 SELECT * FROM SACH;
+SELECT * FROM NHANVIEN;

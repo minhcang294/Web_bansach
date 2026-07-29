@@ -9,10 +9,10 @@ const UserManagement = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
 
-  // Các state cho Modal Thêm/Sửa
+  // Các state cho Modal Thêm/Sửa (Đã bổ sung trường password)
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ id: "", fullName: "", email: "", role: "User", status: 1 });
+  const [formData, setFormData] = useState({ id: "", fullName: "", email: "", password: "", role: "User", status: 1 });
 
   const getToken = () => localStorage.getItem('token') || localStorage.getItem('accessToken');
 
@@ -69,16 +69,17 @@ const UserManagement = () => {
 
   // Các hàm xử lý Modal
   const handleOpenAdd = () => {
-    setFormData({ id: "", fullName: "", email: "", role: "User", status: 1 });
+    setFormData({ id: "", fullName: "", email: "", password: "", role: "User", status: 1 });
     setIsEditing(false);
     setShowModal(true);
   };
 
   const handleOpenEdit = (user) => {
     setFormData({
-      id: user.id,
-      fullName: user.fullName || user.tenKhachHang || "",
+      id: user.id || user.maKhachHang || user.maNhanVien,
+      fullName: user.fullName || user.tenKhachHang || user.tenNV || "",
       email: user.email || "",
+      password: "", // Không hiển thị mật khẩu cũ khi sửa
       role: user.role || "User",
       status: user.status !== undefined ? user.status : 1
     });
@@ -86,10 +87,53 @@ const UserManagement = () => {
     setShowModal(true);
   };
 
+  // HÀM LƯU THAY ĐỔI (THÊM MỚI HOẶC CẬP NHẬT)
+  const handleSaveUser = async () => {
+    if (!formData.fullName || !formData.email) {
+      alert("Vui lòng nhập đầy đủ Họ tên và Email!");
+      return;
+    }
+
+    if (!isEditing && (!formData.password || formData.password.length < 6)) {
+      alert("Mật khẩu phải có ít nhất 6 ký tự khi tạo tài khoản mới!");
+      return;
+    }
+
+    const url = isEditing 
+      ? `http://localhost:5000/api/auth/users/${formData.id}` 
+      : 'http://localhost:5000/api/auth/users';
+    
+    const method = isEditing ? 'PUT' : 'POST';
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        alert(isEditing ? "Cập nhật người dùng thành công!" : "Thêm người dùng mới thành công!");
+        setShowModal(false);
+        fetchUsers();
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        alert("Lưu thất bại: " + (errData.message || "Vui lòng kiểm tra lại dữ liệu."));
+      }
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+      alert("Đã xảy ra lỗi khi kết nối với máy chủ.");
+    }
+  };
+
   // Logic Lọc & Tìm kiếm
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = (user.fullName || user.tenKhachHang || "").toLowerCase().includes(searchKeyword.toLowerCase()) || 
-                          (user.email || "").toLowerCase().includes(searchKeyword.toLowerCase());
+    const name = (user.fullName || user.tenKhachHang || user.tenNV || "").toLowerCase();
+    const email = (user.email || "").toLowerCase();
+    const matchesSearch = name.includes(searchKeyword.toLowerCase()) || email.includes(searchKeyword.toLowerCase());
     const matchesRole = roleFilter === "All" || (user.role || "User") === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -100,20 +144,16 @@ const UserManagement = () => {
       {/* HEADER: Tiêu đề & Nút thêm mới */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "nowrap" }}>
         
-        {/* Khối tiêu đề (Ép không xuống dòng) */}
         <h2 style={{ color: "#333", margin: 0, display: "flex", alignItems: "center", gap: "10px", whiteSpace: "nowrap" }}>
           <FaUserShield color="#e71a22" /> Quản lý Người dùng
         </h2>
 
-        {/* Khối nút Thêm mới (Ép kích thước ôm vừa chữ, không bị giãn to) */}
         <button 
           onClick={handleOpenAdd}
           style={{ 
             backgroundColor: "#28a745", color: "white", border: "none", padding: "10px 20px", 
             borderRadius: "5px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontWeight: "600",
-            width: "fit-content", // Ép kích thước vừa phải
-            whiteSpace: "nowrap", // Không cho chữ rớt dòng
-            margin: 0
+            width: "fit-content", whiteSpace: "nowrap", margin: 0
           }}
         >
           <FaPlus /> Thêm người dùng
@@ -163,9 +203,9 @@ const UserManagement = () => {
               <tr><td colSpan="6" style={{ padding: "30px", textAlign: "center", color: "#888" }}>Đang tải dữ liệu...</td></tr>
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((user, index) => (
-                <tr key={user.id} style={{ borderBottom: "1px solid #eee", backgroundColor: index % 2 === 0 ? "white" : "#fcfcfc" }}>
-                  <td style={{ padding: "15px", color: "#555", fontSize: "14px" }}>{user.id}</td>
-                  <td style={{ padding: "15px", fontWeight: "600", color: "#333" }}>{user.fullName || user.tenKhachHang || 'Chưa cập nhật'}</td>
+                <tr key={user.id || index} style={{ borderBottom: "1px solid #eee", backgroundColor: index % 2 === 0 ? "white" : "#fcfcfc" }}>
+                  <td style={{ padding: "15px", color: "#555", fontSize: "14px" }}>{user.id || user.maKhachHang || user.maNhanVIen}</td>
+                  <td style={{ padding: "15px", fontWeight: "600", color: "#333" }}>{user.fullName || user.tenKhachHang || user.tenNV || 'Chưa cập nhật'}</td>
                   <td style={{ padding: "15px", color: "#555" }}>{user.email}</td>
                   
                   {/* Cột Vai trò */}
@@ -187,7 +227,7 @@ const UserManagement = () => {
                         color: user.status === 0 ? '#d93025' : '#137333' 
                       }}>
                         {user.status === 0 ? "Đã khóa" : "Hoạt động"}
-                      </span>
+                     </span>
                   </td>
 
                   {/* Cột Thao tác */}
@@ -206,7 +246,7 @@ const UserManagement = () => {
                       {user.status === 0 ? <FaUnlock /> : <FaLock />}
                     </button>
                     <button 
-                      onClick={() => handleDeleteUser(user.id)}
+                      onClick={() => handleDeleteUser(user.id || user.maKhachHang)}
                       title="Xóa vĩnh viễn"
                       style={{ backgroundColor: "#dc3545", color: "white", border: "none", padding: "8px", borderRadius: "4px", cursor: "pointer", width: "auto" }}
                     >
@@ -226,7 +266,7 @@ const UserManagement = () => {
         </table>
       </div>
 
-      {/* MODAL THÊM / SỬA USER (Đã fix lỗi lệch Tiêu đề và Dấu X) */}
+      {/* MODAL THÊM / SỬA USER */}
       {showModal && (
         <div style={{ 
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0, 
@@ -234,7 +274,6 @@ const UserManagement = () => {
         }}>
           <div style={{ backgroundColor: "white", padding: "25px", borderRadius: "8px", width: "100%", maxWidth: "500px", boxSizing: "border-box" }}>
             
-            {/* KHU VỰC TIÊU ĐỀ & DẤU X (Ép nằm 2 bên trái phải) */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: "25px" }}>
               <h3 style={{ margin: 0, color: "#333", fontSize: "22px" }}>
                 {isEditing ? "Chỉnh sửa Người dùng" : "Thêm Người dùng mới"}
@@ -258,6 +297,14 @@ const UserManagement = () => {
                 <input type="email" value={formData.email} disabled={isEditing} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="Nhập email..." style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", outline: "none", backgroundColor: isEditing ? "#f0f0f0" : "white", color: "#333", boxSizing: "border-box" }} />
               </div>
 
+              {/* Ô NHẬP MẬT KHẨU (CHỈ HIỆN KHI THÊM MỚI) */}
+              {!isEditing && (
+                <div>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px", color: "#333" }}>Mật khẩu</label>
+                  <input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)..." style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", outline: "none", color: "#333", boxSizing: "border-box" }} />
+                </div>
+              )}
+
               <div>
                 <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px", color: "#333" }}>Vai trò (Role)</label>
                 <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", outline: "none", color: "#333", boxSizing: "border-box" }}>
@@ -277,6 +324,7 @@ const UserManagement = () => {
               </button>
               
               <button 
+                onClick={handleSaveUser}
                 style={{ padding: "10px 20px", borderRadius: "4px", border: "none", backgroundColor: "#e71a22", color: "white", cursor: "pointer", fontWeight: "600", width: "auto" }}
               >
                 {isEditing ? "Lưu thay đổi" : "Tạo tài khoản"}

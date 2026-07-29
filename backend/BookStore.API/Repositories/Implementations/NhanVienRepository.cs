@@ -20,6 +20,16 @@ public class NhanVienRepository : INhanVienRepository
     }
 
     // ==========================================
+    // BỔ SUNG: HÀM THÊM NHÂN VIÊN MỚI
+    // ==========================================
+    public async Task<NhanVien> AddAsync(NhanVien nhanVien)
+    {
+        _context.NhanViens.Add(nhanVien);
+        await _context.SaveChangesAsync();
+        return nhanVien;
+    }
+
+    // ==========================================
     // CÁC HÀM QUẢN LÝ NGƯỜI DÙNG (ADMIN)
     // ==========================================
 
@@ -41,6 +51,15 @@ public class NhanVienRepository : INhanVienRepository
             throw new ArgumentNullException(nameof(nhanVien), "Nhân viên không được để trống.");
 
         _context.NhanViens.Remove(nhanVien);
+        await _context.SaveChangesAsync();
+    }
+
+    // ==========================================
+    // BỔ SUNG: HÀM CẬP NHẬT THÔNG TIN
+    // ==========================================
+    public async Task UpdateAsync(NhanVien nhanVien)
+    {
+        _context.NhanViens.Update(nhanVien);
         await _context.SaveChangesAsync();
     }
 }

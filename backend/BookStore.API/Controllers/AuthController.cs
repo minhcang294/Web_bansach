@@ -2,7 +2,6 @@ using BookStore.API.Models.DTOs.Auth;
 using BookStore.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookStore.API.Services.Implementations;
 using Google.Apis.Auth; 
 using Microsoft.Extensions.Configuration; 
 
@@ -45,9 +44,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    // ====================================================================
-    // API ĐĂNG NHẬP BẰNG GOOGLE (ĐÃ TỐI ƯU TRẢ VỀ TOKEN & USER)
-    // ====================================================================
     [HttpPost("google-login")]
     [ProducesResponseType(typeof(AuthResponseDto), 200)]
     [ProducesResponseType(400)]
@@ -61,19 +57,16 @@ public class AuthController : ControllerBase
 
         try
         {
-            // 1. Cấu hình kiểm tra Audience với ClientId từ appsettings.json
             var settings = new GoogleJsonWebSignature.ValidationSettings()
             {
                 Audience = new List<string>() { _configuration["GoogleAuth:ClientId"] }
             };
 
-            // 2. Xác thực TokenId gửi lên từ Frontend (React)
             var payload = await GoogleJsonWebSignature.ValidateAsync(request.TokenId, settings);
             
             string userEmail = payload.Email;
             string userName = payload.Name;
 
-            // 3. Gọi Service xử lý nghiệp vụ Database (Tự động tạo user nếu chưa có và sinh Token)
             var result = await _authService.GoogleLoginAsync(userEmail, userName);
 
             return Ok(result);
@@ -174,4 +167,51 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPut("users/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto dto)
+    {
+        if (!ModelState.IsValid) 
+            return BadRequest(ModelState);
+
+        try
+        {
+            await _authService.UpdateUserAsync(id, dto);
+            return Ok(new { message = "Cập nhật người dùng thành công." });
+        }
+        catch (AuthException ex)
+        {
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi hệ thống khi cập nhật: " + ex.Message });
+        }
+    }
+
+    [HttpPost("users")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateUser([FromBody] RegisterDto dto)
+    {
+        if (!ModelState.IsValid) 
+            return BadRequest(ModelState);
+
+        try
+        {
+            // SỬA TỪ RegisterAsync SANG CreateUserByAdminAsync ĐỂ NHẬN ĐÚNG ROLE TỪ TRANG ADMIN
+            var result = await _authService.CreateUserByAdminAsync(dto);
+            return StatusCode(201, result);
+        }
+        catch (AuthException ex)
+        {
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi hệ thống khi thêm người dùng: " + ex.Message });
+        }
+        
+    }
+    
 }

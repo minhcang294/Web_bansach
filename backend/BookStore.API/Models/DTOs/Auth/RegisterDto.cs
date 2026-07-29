@@ -15,4 +15,8 @@ public class RegisterDto
     [Required(ErrorMessage = "Mật khẩu không được để trống")]
     [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
     public string Password { get; set; } = string.Empty;
+
+    // BỔ SUNG: Thuộc tính Role để nhận dữ liệu từ Admin.
+    // Có dấu '?' để cho phép null (giúp khách hàng tự đăng ký ngoài web không bị báo lỗi).
+    public string? Role { get; set; }
 }

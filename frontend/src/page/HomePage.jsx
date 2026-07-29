@@ -37,6 +37,20 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
+      
+      {/* ================= ĐÃ THÊM: FIX LỖI HOVER NÚT DANH MỤC ================= */}
+      <style>{`
+        .category-item {
+          transition: all 0.3s ease; /* Thêm hiệu ứng chuyển đổi mượt mà */
+        }
+        .category-item:hover {
+          background-color: #e71a22 !important; /* Ép nền đỏ */
+          color: #ffffff !important;            /* Ép chữ màu trắng để đọc được */
+          border-color: #e71a22 !important;     /* Đổi viền sang đỏ cho đồng bộ */
+          box-shadow: 0 4px 10px rgba(231, 26, 34, 0.2); /* Thêm bóng đổ nhẹ cho nút nổi lên */
+        }
+      `}</style>
+
      {/* ================= HERO ================= */}
       {/* ĐÃ SỬA: Đổi margin-top thành 0 để dính sát vào menu đỏ */}
       <section style={{ margin: "0 0 50px 0" }}>

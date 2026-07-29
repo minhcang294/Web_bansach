@@ -11,4 +11,8 @@ public interface INhanVienRepository
     Task<List<NhanVien>> GetAllAsync();
     Task<NhanVien?> GetByIdAsync(string id);
     Task DeleteAsync(NhanVien nhanVien);
+    
+    // BỔ SUNG HÀM CẬP NHẬT (Để sửa lỗi gạch đỏ ở AuthService)
+    Task UpdateAsync(NhanVien nhanVien);
+    Task<NhanVien> AddAsync(NhanVien nhanVien);
 }

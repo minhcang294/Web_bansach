@@ -29,6 +29,13 @@ export default function Header() {
         /* ================= CÁC KHỐI CHUNG ================= */
         .kd-topbar { background-color: #f5f5f5; border-bottom: 1px solid #ebebeb; padding: 8px 0; font-size: 13px; }
         
+        /* ================= ĐÃ THÊM: SỬA LỖI HOVER BỊ ĐỎ ================= */
+        .topbar-admin-link { transition: all 0.2s; }
+        .topbar-admin-link:hover {
+          color: #3498db !important; /* Ép buộc giữ màu xanh nguyên bản */
+          opacity: 0.7; /* Làm mờ nhẹ một chút khi hover để có cảm giác bấm */
+        }
+        
         /* ================= THANH MENU ĐỎ CHÍNH ================= */
         .kd-navbar-red { background-color: #e71a22; color: #fff; }
         .nav-red-container { display: flex; align-items: center; gap: 30px; }
@@ -96,7 +103,7 @@ export default function Header() {
               <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                 <span style={{ fontWeight: "600", color: "#333" }}>Xin chào, {user?.fullName || "Người dùng"}</span>
                 {user?.role === "Admin" && (
-                  <><span style={{ color: "#ccc" }}>|</span><Link to="/admin" style={{ color: "#3498db", fontWeight: "700", textDecoration: "none" }}><FaCog /> Quản trị</Link></>
+                  <><span style={{ color: "#ccc" }}>|</span><Link to="/admin" className="topbar-admin-link" style={{ color: "#3498db", fontWeight: "700", textDecoration: "none" }}><FaCog /> Quản trị</Link></>
                 )}
                 {user?.role === "Staff" && (
                   <><span style={{ color: "#ccc" }}>|</span><Link to="/staff" style={{ color: "#e74c3c", fontWeight: "700", textDecoration: "none" }}><FaUserTie /> Nhân viên</Link></>
@@ -258,7 +265,7 @@ export default function Header() {
                     <Link to="/books?type=sach-moi" className="highlight-item">Sách Mới ♥</Link>
                     <Link to="/books?type=manga-moi" className="highlight-item">Manga Mới ♥</Link>
                     <Link to="/books?type=light-novel-moi" className="highlight-item">Light Novel Mới ♥</Link>
-                    <Link to="/books?type=dam-my-moi" className="highlight-item">Đam Mỹ Mới ♥</Link>
+                    
                     <Link to="/books?type=ban-chay" className="highlight-item">Sách Bán Chạy ♥</Link>
                   </div>
                 </div>
