@@ -1,28 +1,29 @@
 import axios from "axios";
 
-// LƯU Ý: Hãy thay thế số "5001" bên dưới thành cổng (port) thực tế mà Backend của bạn đang chạy (Ví dụ: 7146)
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://localhost:5000/api";
+// LƯU Ý: Hãy đảm bảo port API khớp với Backend của bạn (Mặc định 5000)
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
 });
 
-// Tự động đính JWT token vào mọi request nếu đã đăng nhập
+// ⚡ Bọc thép: Tự động quét cả "accessToken" hoặc "token" để tránh tuyệt đối lỗi 401 do lệch tên
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Token hết hạn (401) -> tự động đăng xuất
+// Token hết hạn hoặc không hợp lệ (401) -> tự động dọn dẹp LocalStorage
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("accessToken");
+      localStorage.removeItem("token");
       localStorage.removeItem("user");
     }
     return Promise.reject(error);
@@ -38,12 +39,13 @@ export const authApi = {
   register: (fullName, email, password) =>
     axiosClient.post("/auth/register", { fullName, email, password }),
 
-  // Khớp với AuthController.cs -> [HttpPost("google-login")] (Mới thêm)
+  // Khớp với AuthController.cs -> [HttpPost("google-login")]
   googleLogin: (tokenId) =>
     axiosClient.post("/auth/google-login", { TokenId: tokenId }),
 
   logout: () => {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
   },
 
@@ -52,7 +54,7 @@ export const authApi = {
     return raw ? JSON.parse(raw) : null;
   },
 
-  isAuthenticated: () => !!localStorage.getItem("accessToken"),
+  isAuthenticated: () => !!localStorage.getItem("accessToken") || !!localStorage.getItem("token"),
 };
 
 export default axiosClient;

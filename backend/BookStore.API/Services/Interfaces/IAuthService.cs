@@ -17,6 +17,10 @@ public interface IAuthService
     Task<object> GetAllUsersAsync(); 
     Task DeleteUserAsync(string userId);
     Task UpdateUserAsync(string userId, UpdateUserDto dto);
+
+    // 👇 BỔ SUNG 2 DÒNG NÀY ĐỂ HẾT LỖI ĐỎ Ở CONTROLLER
+    Task<bool> EmailExistsAsync(string email);
+    Task<bool> ResetPasswordAsync(string email, string newPassword);
 }
 
 // Class Exception để xử lý lỗi nghiệp vụ

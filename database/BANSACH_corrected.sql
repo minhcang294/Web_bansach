@@ -183,6 +183,13 @@ CREATE TABLE HOADON (
     MAKHUYENMAI         varchar(20)     NULL,
     NGAYDATHANG         datetime        NOT NULL DEFAULT GETDATE(),
     NGAYGIAHANG         datetime        NULL,
+    
+    -- 🌟 CÁC CỘT MỚI BỔ SUNG TẠI ĐÂY 🌟
+    TENNGUOINHAN        nvarchar(100)   NULL,
+    EMAIL               nvarchar(100)   NULL,
+    PHUONGTHUCTHANHTOAN nvarchar(50)    NOT NULL DEFAULT N'COD',
+    GHICHU              nvarchar(500)   NULL,
+    
     DIACHIGIAOHANG      nvarchar(200)   NOT NULL,
     SODIENTHOAINHAN     varchar(15)     NOT NULL,
     TRANGTHAIGIAOHANG   nvarchar(30)    NOT NULL DEFAULT N'ChoXuLy',
@@ -288,8 +295,6 @@ INSERT INTO NHANVIEN (MANHANVIEN, TENDANGNHAP, MATKHAU, TENNV, EMAIL, VAITROPHUT
 ('NV001', 'admin', '$2b$11$QLj8z3b7h5FS9dVcdyVYj.DkW0MmndWveQVkx8X5i19/idvI.dQcy', N'Quản Trị Viên', 'admin@bookstore.com', N'Quản trị hệ thống', 'Admin', N'DangLamViec', 1),
 ('NV002', 'staff', '$2a$11$o2EZrqlCD9DvCoV8lsJhQOki5d5b3.FMxOttZ.ARWrmR1zO1iDj7i', N'Nhân Viên Bán Hàng', 'staff@bookstore.com', N'Bán hàng', 'Staff', N'DangLamViec', 1);
 GO
--- Lấy mật khẩu của tài khoản vừa đăng ký (nó sẽ nằm ở dòng đầu tiên)
-SELECT EMAIL, MATKHAU FROM KHACHHANG ORDER BY NGAYDK DESC;
 
 INSERT INTO KHACHHANG (MAKHACHHANG, TENDANGNHAP, MATKHAU, HOTENKH, EMAIL, SODIENTHOAI, DIACHIKH, TRANGTHAI) VALUES
 ('KH001', 'test@bookstore.com', '$2b$11$UsejvSVoRrxrXybpz6EviuriVOtmqedJnvGGSY5gT9mUWMaUcuof6', N'Người Dùng Test', 'test@bookstore.com', '0900000000', N'123 Đường ABC, Quận 1, TP.HCM', 1);
@@ -311,5 +316,6 @@ GO
 /*================================================================*/
 SELECT * FROM PHIEUNHAP;
 SELECT * FROM CHITIETPHIEUNHAP;
+SELECT * FROM HOADON
 SELECT * FROM SACH;
 SELECT * FROM NHANVIEN;

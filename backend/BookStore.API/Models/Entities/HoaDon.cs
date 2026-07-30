@@ -11,21 +11,43 @@ public class HoaDon
 
     [Column("MANHANVIEN"), MaxLength(20)]
     public string? MaNhanVien { get; set; }
+    
+    [ForeignKey("MaNhanVien")]
     public NhanVien? NhanVien { get; set; }
 
     [Column("MAKHACHHANG"), Required, MaxLength(20)]
     public string MaKhachHang { get; set; } = string.Empty;
+    
+    [ForeignKey("MaKhachHang")] 
     public KhachHang? KhachHang { get; set; }
 
     [Column("MAKHUYENMAI"), MaxLength(20)]
     public string? MaKhuyenMai { get; set; }
+    
+    [ForeignKey("MaKhuyenMai")]
     public KhuyenMai? KhuyenMai { get; set; }
 
     [Column("NGAYDATHANG")]
     public DateTime NgayDatHang { get; set; } = DateTime.UtcNow;
 
-    [Column("NGAYGIAHANG")]
-    public DateTime? NgayGiaHang { get; set; }
+    [Column("NGAYGIAHANG")] 
+    public DateTime? NgayGiaoHang { get; set; }
+
+    // ==========================================
+    // 🌟 CÁC TRƯỜNG VỪA BỔ SUNG ĐỂ KHỚP VỚI REACT
+    // ==========================================
+    [Column("TENNGUOINHAN"), MaxLength(100)]
+    public string TenNguoiNhan { get; set; } = string.Empty; // Tương ứng với CustomerName/FullName
+
+    [Column("EMAIL"), MaxLength(100)]
+    public string? Email { get; set; }
+
+    [Column("PHUONGTHUCTHANHTOAN"), MaxLength(50)]
+    public string PhuongThucThanhToan { get; set; } = "COD"; // Tương ứng với PaymentMethod
+
+    [Column("GHICHU"), MaxLength(500)]
+    public string? GhiChu { get; set; } // Tương ứng với Note
+    // ==========================================
 
     [Column("DIACHIGIAOHANG"), Required, MaxLength(200)]
     public string DiaChiGiaoHang { get; set; } = string.Empty;
@@ -34,12 +56,12 @@ public class HoaDon
     public string SoDienThoaiNhan { get; set; } = string.Empty;
 
     [Column("TRANGTHAIGIAOHANG"), MaxLength(30)]
-    public string TrangThaiGiaoHang { get; set; } = "ChoXuLy"; // ChoXuLy|DaXacNhan|DangGiao|HoanTat|DaHuy
+    public string TrangThaiGiaoHang { get; set; } = "Chờ xử lý"; 
 
     [Column("PHIVANCHUYEN", TypeName = "decimal(18,2)")]
     public decimal PhiVanChuyen { get; set; }
 
-    [Column("GIAMGIA", TypeName = "decimal(5,2)")]
+    [Column("GIAMGIA", TypeName = "decimal(18,2)")] 
     public decimal GiamGia { get; set; }
 
     [Column("TONGTIEN", TypeName = "decimal(18,2)")]

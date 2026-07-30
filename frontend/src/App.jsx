@@ -52,7 +52,14 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
 const AppLayout = () => {
   const { pathname } = useLocation();
-  const hideLayout = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname.startsWith("/admin");
+  
+  // ĐÃ SỬA: Thêm điều kiện || pathname.startsWith("/staff") để ẩn Header/Footer
+  const hideLayout = 
+    pathname === "/login" || 
+    pathname === "/register" || 
+    pathname === "/forgot-password" || 
+    pathname.startsWith("/admin") || 
+    pathname.startsWith("/staff");
 
   return (
     <div className="app">
@@ -98,7 +105,7 @@ const AppLayout = () => {
             <Route index element={<Dashboard />} />
             <Route path="books" element={<BookManagement />} />
             <Route path="categories" element={<CategoryManagement />} /> 
-            <Route path="imports" element={<ImportManagement />} /> {/* <-- THÊM ROUTE QUẢN LÝ NHẬP KHO */}
+            <Route path="imports" element={<ImportManagement />} />
             <Route path="orders" element={<OrderManagement />} /> 
             <Route path="users" element={<UserManagement />} />
             <Route path="reports" element={<ReportsPage />} />

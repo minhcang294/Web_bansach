@@ -67,4 +67,12 @@ public class SachRepository : ISachRepository
         await _context.SaveChangesAsync();
         return true;
     }
+
+    // ==========================================
+    // THÊM MỚI: Lấy tất cả sách (Để đếm số lượng tồn kho)
+    // ==========================================
+    public async Task<List<Sach>> GetAllAsync()
+    {
+        return await _context.Saches.ToListAsync();
+    }
 }

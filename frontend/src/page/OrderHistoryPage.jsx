@@ -2,17 +2,21 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Package, Trash2 } from "lucide-react";
 
-// Tạm giả lập formatCurrency nếu bạn chưa import kịp
 const formatCurrency = (amount) => {
   return (amount || 0).toLocaleString('vi-VN') + ' đ';
 };
 
 const STATUS_LABEL = {
-  ChoXuLy: "Chờ xử lý",
-  DaXacNhan: "Đã xác nhận",
-  DangGiao: "Đang giao",
-  HoanTat: "Hoàn tất",
-  DaHuy: "Đã hủy"
+  "Chờ xử lý": "Chờ xử lý",
+  "ChoXuLy": "Chờ xử lý",
+  "Đã xác nhận": "Đã xác nhận",
+  "DaXacNhan": "Đã xác nhận",
+  "Đang giao": "Đang giao",
+  "DangGiao": "Đang giao",
+  "Hoàn tất": "Hoàn tất",
+  "HoanTat": "Hoàn tất",
+  "Đã hủy": "Đã hủy",
+  "DaHuy": "Đã hủy"
 };
 
 export default function OrderHistoryPage() {
@@ -59,15 +63,15 @@ export default function OrderHistoryPage() {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: "DaHuy" }) 
+        body: JSON.stringify({ status: "Đã hủy" }) 
       });
 
       if (response.ok) {
         alert("Đã hủy đơn hàng thành công!");
         fetchMyOrders(); 
       } else {
-        const errorText = await response.text();
-        alert(`Không thể hủy đơn. Backend báo lỗi: ${errorText || response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Không thể hủy đơn. Backend báo lỗi: ${errorData.message || response.statusText}`);
       }
     } catch (error) {
       console.error("Lỗi khi gọi API hủy đơn:", error);
@@ -102,91 +106,97 @@ export default function OrderHistoryPage() {
       <h2 className="section-title" style={{ marginBottom: '20px', color: '#2c3e50' }}>Đơn hàng của tôi</h2>
       
       <div style={{ display: "flex", flexDirection: "column", gap: '16px' }}>
-        {orders.map((o) => (
-          <Link 
-            key={o.id} 
-            to={`/orders/${o.id}`} 
-            style={{ 
-              padding: '20px', 
-              display: "block", 
-              textDecoration: "none",
-              borderRadius: '8px',
-              border: '1px solid #eaeaea',
-              transition: 'box-shadow 0.2s',
-              backgroundColor: '#fff'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'}
-            onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: '15px' }}>
-              
-              {/* Bên trái: Thông tin mã đơn & Ngày đặt */}
-              <div style={{ flex: '1 1 auto', minWidth: '200px' }}>
-                <p style={{ fontWeight: 700, color: "var(--wine-dark, #2c3e50)", margin: "0 0 6px", fontSize: '16px' }}>
-                  Đơn hàng #{o.id}
-                </p>
-                <p style={{ fontSize: '13.5px', color: "var(--muted, #7f8c8d)", margin: 0 }}>
-                  {new Date(o.orderDate || Date.now()).toLocaleDateString("vi-VN")} • {o.items?.length || o.orderItems?.length || 1} sản phẩm
-                </p>
-              </div>
+        {orders.map((o) => {
+          const statusStr = o.status ? o.status.trim() : "";
+          const isPending = statusStr === "Chờ xử lý" || statusStr === "ChoXuLy";
+          const isCancelled = statusStr === "Đã hủy" || statusStr === "DaHuy";
 
-              {/* Bên phải: Trạng thái, Tổng tiền & Nút Hủy */}
-              <div style={{ display: "flex", alignItems: "center", gap: '24px', flexWrap: "nowrap" }}>
+          return (
+            <Link 
+              key={o.id} 
+              to={`/orders/${o.id}`} 
+              style={{ 
+                padding: '20px', 
+                display: "block", 
+                textDecoration: "none",
+                borderRadius: '8px',
+                border: '1px solid #eaeaea',
+                transition: 'box-shadow 0.2s',
+                backgroundColor: '#fff'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'}
+              onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: '15px' }}>
                 
-                {/* Badge trạng thái */}
-                <span className={`status-badge status-${o.status}`} style={{ 
-                  fontWeight: '600', 
-                  fontSize: '14px',
-                  whiteSpace: 'nowrap', // QUAN TRỌNG: Ngăn chữ rớt dòng
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  backgroundColor: o.status === 'ChoXuLy' ? '#e1f5fe' : (o.status === 'DaHuy' ? '#fdedec' : '#f0f3f4'),
-                  color: o.status === 'ChoXuLy' ? '#0288d1' : (o.status === 'DaHuy' ? '#e74c3c' : '#555')
-                }}>
-                  {STATUS_LABEL[o.status] || o.status}
-                </span>
-                
-                {/* Giá tiền */}
-                <span style={{ 
-                  fontWeight: 700, 
-                  color: "#e74c3c", 
-                  fontSize: '17px',
-                  whiteSpace: 'nowrap' // Ngăn giá tiền rớt dòng
-                }}>
-                  {formatCurrency(o.totalAmount)}
-                </span>
+                {/* Bên trái: Thông tin mã đơn & Ngày đặt */}
+                <div style={{ flex: '1 1 auto', minWidth: '200px' }}>
+                  <p style={{ fontWeight: 700, color: "var(--wine-dark, #2c3e50)", margin: "0 0 6px", fontSize: '16px' }}>
+                    Đơn hàng #{o.id}
+                  </p>
+                  <p style={{ fontSize: '13.5px', color: "var(--muted, #7f8c8d)", margin: 0 }}>
+                    {new Date(o.orderDate || Date.now()).toLocaleDateString("vi-VN")} • {o.items?.length || o.orderItems?.length || 1} sản phẩm
+                  </p>
+                </div>
 
-                {/* Nút hủy đơn */}
-                {o.status === "ChoXuLy" && (
-                  <button
-                    onClick={(e) => handleCancelOrder(e, o.id)}
-                    style={{
-                      backgroundColor: "#fee2e2",
-                      color: "#dc2626",
-                      border: "1px solid #fecaca",
-                      padding: "8px 16px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      fontWeight: 600,
-                      fontSize: "13.5px",
-                      whiteSpace: 'nowrap', // Ngăn chữ nút rớt dòng
-                      transition: "all 0.2s"
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#fecaca"}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#fee2e2"}
-                    title="Hủy đơn hàng này"
-                  >
-                    <Trash2 size={16} /> Hủy đơn
-                  </button>
-                )}
+                {/* Bên phải: Trạng thái, Tổng tiền & Nút Hủy */}
+                <div style={{ display: "flex", alignItems: "center", gap: '24px', flexWrap: "nowrap" }}>
+                  
+                  {/* Badge trạng thái */}
+                  <span style={{ 
+                    fontWeight: '600', 
+                    fontSize: '14px',
+                    whiteSpace: 'nowrap',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    backgroundColor: isPending ? '#e1f5fe' : (isCancelled ? '#fdedec' : '#f0f3f4'),
+                    color: isPending ? '#0288d1' : (isCancelled ? '#e74c3c' : '#555')
+                  }}>
+                    {STATUS_LABEL[o.status] || o.status}
+                  </span>
+                  
+                  {/* Giá tiền */}
+                  <span style={{ 
+                    fontWeight: 700, 
+                    color: "#e74c3c", 
+                    fontSize: '17px',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {formatCurrency(o.totalAmount)}
+                  </span>
+
+                  {/* Nút hủy đơn: Chỉ hiển thị khi đang ở trạng thái Chờ xử lý */}
+                  {isPending && (
+                    <button
+                      onClick={(e) => handleCancelOrder(e, o.id)}
+                      style={{
+                        backgroundColor: "#fee2e2",
+                        color: "#dc2626",
+                        border: "1px solid #fecaca",
+                        padding: "8px 16px",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontWeight: 600,
+                        fontSize: "13.5px",
+                        whiteSpace: 'nowrap',
+                        transition: "all 0.2s"
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#fecaca"}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#fee2e2"}
+                      title="Hủy đơn hàng này"
+                    >
+                      <Trash2 size={16} /> Hủy đơn
+                    </button>
+                  )}
+                </div>
+
               </div>
-
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

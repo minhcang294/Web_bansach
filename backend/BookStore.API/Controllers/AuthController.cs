@@ -1,5 +1,6 @@
 using BookStore.API.Models.DTOs.Auth;
 using BookStore.API.Services.Interfaces;
+using BookStore.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Google.Apis.Auth; 
@@ -110,10 +111,10 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
     {
-        if (string.IsNullOrEmpty(request.Email))
+        if (request == null || string.IsNullOrEmpty(request.Email))
             return BadRequest(new { message = "Email không được để trống." });
         
-        var userExists = true; 
+        var userExists = await _authService.EmailExistsAsync(request.Email);
         
         if (!userExists)
         {
@@ -122,13 +123,16 @@ public class AuthController : ControllerBase
         
         string resetToken = Guid.NewGuid().ToString(); 
         string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&token={resetToken}";
-        string emailSubject = "Yêu cầu khôi phục mật khẩu - Hệ Thống Bán Sách";
+        string emailSubject = "Yêu cầu khôi phục mật khẩu - BookGalaxy";
         string emailBody = $@"
-            <h3>Xin chào!</h3>
-            <p>Bạn vừa yêu cầu đặt lại mật khẩu. Vui lòng click vào đường dẫn bên dưới để tạo mật khẩu mới:</p>
-            <a href='{resetLink}' style='display:inline-block; padding:10px 20px; background-color:#3498db; color:white; text-decoration:none; border-radius:5px;'>Đặt lại mật khẩu</a>
-            <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
-            <p>Trân trọng!</p>";
+            <div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
+                <h2 style='color: #e74c3c;'>BookGalaxy</h2>
+                <h3>Xin chào!</h3>
+                <p>Bạn vừa yêu cầu đặt lại mật khẩu. Vui lòng click vào đường dẫn bên dưới để tạo mật khẩu mới:</p>
+                <a href='{resetLink}' style='display:inline-block; padding:10px 20px; background-color:#3498db; color:white; text-decoration:none; border-radius:5px; font-weight:bold;'>Đặt lại mật khẩu</a>
+                <p style='margin-top: 20px; color: #64748b;'>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
+                <p>Trân trọng!</p>
+            </div>";
 
         try
         {
@@ -142,11 +146,11 @@ public class AuthController : ControllerBase
     }
 
     // ====================================================================
-    // API QUẢN LÝ NGƯỜI DÙNG (ADMIN)
+    // API QUẢN LÝ NGƯỜI DÙNG (ADMIN / STAFF)
     // ====================================================================
 
     [HttpGet("users")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")] 
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _authService.GetAllUsersAsync();
@@ -154,7 +158,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpDelete("users/{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")] 
     public async Task<IActionResult> DeleteUser(string id)
     {
         try
@@ -169,7 +173,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPut("users/{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")] 
     public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto dto)
     {
         if (!ModelState.IsValid) 
@@ -191,7 +195,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("users")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")] 
     public async Task<IActionResult> CreateUser([FromBody] RegisterDto dto)
     {
         if (!ModelState.IsValid) 
@@ -199,7 +203,6 @@ public class AuthController : ControllerBase
 
         try
         {
-            // SỬA TỪ RegisterAsync SANG CreateUserByAdminAsync ĐỂ NHẬN ĐÚNG ROLE TỪ TRANG ADMIN
             var result = await _authService.CreateUserByAdminAsync(dto);
             return StatusCode(201, result);
         }
@@ -211,7 +214,5 @@ public class AuthController : ControllerBase
         {
             return StatusCode(500, new { message = "Lỗi hệ thống khi thêm người dùng: " + ex.Message });
         }
-        
     }
-    
 }

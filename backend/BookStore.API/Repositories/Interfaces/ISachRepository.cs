@@ -11,4 +11,9 @@ public interface ISachRepository
     Task UpdateAsync(Sach sach, string maDanhMuc);
     Task<bool> DeleteAsync(string id);
     Task<bool> ExistsAsync(string id);
+    
+    // ==========================================
+    // THÊM DÒNG NÀY ĐỂ HẾT LỖI GẠCH ĐỎ
+    // ==========================================
+    Task<List<Sach>> GetAllAsync();
 }

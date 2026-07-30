@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using BookStore.API.Data;
 using BookStore.API.Repositories.Interfaces;
 using BookStore.API.Repositories.Implementations;
@@ -13,11 +13,11 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Database
+// 1. Cấu hình Database SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. DI - Repositories & Services
+// 2. Đăng ký Dependency Injection (DI) cho Repositories & Services
 builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
 builder.Services.AddScoped<INhanVienRepository, NhanVienRepository>();
 builder.Services.AddScoped<ISachRepository, SachRepository>();
@@ -32,9 +32,15 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSingleton<JwtTokenGenerator>();
 
-builder.Services.AddControllers();
+// Cấu hình Controller và JSON để tránh lỗi vòng lặp (Object Cycle)
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
 
-// 3. JWT
+// 3. Cấu hình xác thực JWT & Sửa lỗi 403 bằng RoleClaimType = "role"
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("SecretKey missing in appsettings.json");
 
@@ -50,11 +56,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        RoleClaimType = ClaimTypes.Role
+        
+        // ⭐ SỬA QUAN TRỌNG: Khớp tên khóa quyền "role" do Token Generator sinh ra
+      //  RoleClaimType = "role" 
     };
 });
 
-// 4. CORS - Cho phép localhost:3000 và 5173
+// 4. Cấu hình CORS (Cho phép ReactJS gọi API)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -66,7 +74,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 5. Swagger
+// 5. Cấu hình Swagger API Documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -81,26 +89,27 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 6. Middleware
+// 6. Khởi tạo Database tự động khi chạy (nếu chưa có)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.EnsureCreated(); 
 }
 
+// Bật Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BookStore API v1"));
 
 app.UseHttpsRedirection();
 
-// =================================================================
-// ĐÃ THÊM: Cho phép truy cập file tĩnh (để đọc ảnh trong thư mục wwwroot)
-// =================================================================
+// Cho phép truy cập file tĩnh (hiển thị ảnh sách trong thư mục wwwroot)
 app.UseStaticFiles(); 
 
+// Thứ tự Middleware bắt buộc: CORS -> Authentication -> Authorization
 app.UseCors("AllowAll"); 
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

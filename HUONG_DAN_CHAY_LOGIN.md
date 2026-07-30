@@ -18,7 +18,12 @@ npm run dev
 http://localhost:5000/swagger/index.html
 docker-compose down
 docker-compose up --build -d
-
+docker ps
 
 
 netstat -ano | findstr :5000
+
+
+D:\clone
+cd D:\clone
+git clone https://github.com/minhcang294/Web_bansach.git

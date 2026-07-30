@@ -9,7 +9,7 @@ const UserManagement = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
 
-  // Các state cho Modal Thêm/Sửa (Đã bổ sung trường password)
+  // Các state cho Modal Thêm/Sửa
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ id: "", fullName: "", email: "", password: "", role: "User", status: 1 });
@@ -30,6 +30,15 @@ const UserManagement = () => {
         }
       });
       
+      // Bổ sung xử lý lỗi 401/403 mượt mà hơn
+      if (response.status === 401 || response.status === 403) {
+        alert("Phiên đăng nhập hết hạn hoặc bạn không đủ quyền Admin. Vui lòng đăng nhập lại!");
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        window.location.href = '/login'; // Tự động đẩy về trang đăng nhập
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         setUsers(Array.isArray(data) ? data : []);

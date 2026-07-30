@@ -7,14 +7,19 @@ namespace BookStore.API.Models.Entities;
 public class ChiTietHoaDon
 {
     [Key, Column("MACTHD")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Giúp SQL tự động tăng ID (1, 2, 3...)
     public int MaCtHd { get; set; }
 
     [Column("MAHOADON"), Required, MaxLength(20)]
     public string MaHoaDon { get; set; } = string.Empty;
+    
+    [ForeignKey("MaHoaDon")]
     public HoaDon? HoaDon { get; set; }
 
     [Column("MASACH"), Required, MaxLength(20)]
     public string MaSach { get; set; } = string.Empty;
+    
+    [ForeignKey("MaSach")]
     public Sach? Sach { get; set; }
 
     [Column("SOLUONG")]
