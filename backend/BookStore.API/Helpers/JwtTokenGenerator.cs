@@ -50,12 +50,17 @@ public class JwtTokenGenerator
     }
 
     // ====================================================================
+<<<<<<< HEAD
     // TOKEN ĐẶT LẠI MẬT KHẨU (THỜI GIAN NGẮN HẠN)
+=======
+    // TOKEN ĐẶT LẠI MẬT KHẨU (dùng JWT ký số, không cần lưu DB)
+>>>>>>> a41405f80f37a4b1af45c39748aea2f2078e7a41
     // ====================================================================
     public string GenerateResetToken(string email)
     {
         var jwtSettings = _config.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"]!;
+<<<<<<< HEAD
         var expiresAt = DateTime.UtcNow.AddMinutes(15); // Chỉ có hiệu lực trong 15 phút
 
         var claims = new List<Claim>
@@ -63,6 +68,15 @@ public class JwtTokenGenerator
             new Claim(ClaimTypes.Email, email), // Đồng bộ dùng ClaimTypes
             new Claim("purpose", "password_reset"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+=======
+        var expiresAt = DateTime.UtcNow.AddMinutes(15);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Email, email),
+            new("purpose", "password_reset"),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+>>>>>>> a41405f80f37a4b1af45c39748aea2f2078e7a41
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -79,9 +93,12 @@ public class JwtTokenGenerator
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+<<<<<<< HEAD
     // ====================================================================
     // KIỂM TRA TÍNH HỢP LỆ CỦA TOKEN ĐẶT LẠI MẬT KHẨU
     // ====================================================================
+=======
+>>>>>>> a41405f80f37a4b1af45c39748aea2f2078e7a41
     public string? ValidateResetTokenAndGetEmail(string token)
     {
         var jwtSettings = _config.GetSection("JwtSettings");
@@ -98,6 +115,7 @@ public class JwtTokenGenerator
                 ValidAudience = jwtSettings["Audience"],
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+<<<<<<< HEAD
                 ValidateLifetime = true // Đảm bảo token chưa hết hạn (chưa qua 15 phút)
             }, out _);
 
@@ -110,6 +128,18 @@ public class JwtTokenGenerator
         catch
         {
             // Bất kỳ lỗi nào (sai chữ ký, hết hạn, giả mạo) đều trả về null
+=======
+                ValidateLifetime = true
+            }, out _);
+
+            var purpose = principal.FindFirst("purpose")?.Value;
+            if (purpose != "password_reset") return null;
+
+            return principal.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
+        }
+        catch
+        {
+>>>>>>> a41405f80f37a4b1af45c39748aea2f2078e7a41
             return null;
         }
     }
