@@ -16,12 +16,9 @@ public interface IAuthService
     // Quản lý người dùng dành cho Admin
     Task<object> GetAllUsersAsync(); 
     Task DeleteUserAsync(string userId);
-<<<<<<< HEAD
     Task UpdateUserAsync(string userId, UpdateUserDto dto);
 
     // 👇 BỔ SUNG 2 DÒNG NÀY ĐỂ HẾT LỖI ĐỎ Ở CONTROLLER
-=======
->>>>>>> a41405f80f37a4b1af45c39748aea2f2078e7a41
     Task<bool> EmailExistsAsync(string email);
     Task<bool> ResetPasswordAsync(string email, string newPassword);
 }

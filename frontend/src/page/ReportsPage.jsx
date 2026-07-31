@@ -15,16 +15,37 @@ export default function ReportsPage() {
     fetchData();
   }, []);
 
+  // ================= CÁC HÀM "HỨNG" DỮ LIỆU ĐA NĂNG TỪ C# =================
+  const getOrderTotal = (o) => o.totalAmount ?? o.TotalAmount ?? o.total ?? o.Total ?? o.tongTien ?? o.TongTien ?? 0;
+  const getOrderStatus = (o) => o.status ?? o.Status ?? o.trangThai ?? o.TrangThai ?? '';
+  const getOrderDate = (o) => o.orderDate ?? o.OrderDate ?? o.ngayDat ?? o.NgayDat ?? Date.now();
+  const getOrderId = (o) => o.id ?? o.Id ?? o.maDonHang ?? o.MaDonHang ?? 'N/A';
+  const getOrderItems = (o) => o.orderItems ?? o.OrderItems ?? o.items ?? o.Items ?? o.chiTietDonHang ?? o.ChiTietDonHang ?? [];
+  const getItemQty = (item) => item.quantity ?? item.Quantity ?? item.soLuong ?? item.SoLuong ?? 1;
+  const getCustomerName = (o) => o.customerName ?? o.CustomerName ?? o.fullName ?? o.FullName ?? o.hoTenKh ?? o.HoTenKh ?? 'Khách vãng lai';
+
+  // ================= HÀM FETCH CÓ TỰ ĐỘNG DÒ ĐƯỜNG DẪN =================
+  const fetchWithFallback = async (urls, headers) => {
+    for (const url of urls) {
+      try {
+        const res = await fetch(`http://localhost:5000${url}`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          return Array.isArray(data) ? data : (data.items || data.data || []);
+        }
+      } catch (error) {
+        // Bỏ qua và thử đường dẫn tiếp theo
+      }
+    }
+    return []; 
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/orders/all', {
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(Array.isArray(data) ? data : (data.items || []));
-      }
+      const headers = { 'Authorization': `Bearer ${getToken()}` };
+      const data = await fetchWithFallback(['/api/orders/all', '/api/orders', '/api/donhang'], headers);
+      setOrders(data);
     } catch (error) {
       console.error("Lỗi tải dữ liệu báo cáo:", error);
     } finally {
@@ -33,49 +54,62 @@ export default function ReportsPage() {
   };
 
   // 1. LỌC ĐƠN HÀNG HỢP LỆ (Chỉ tính đơn Hoàn tất) & THEO THỜI GIAN
-  const completedOrders = orders.filter(o => o.status === 'HoanTat' || o.status === 'Completed');
+  const completedStatuses = ['HoanTat', 'Hoàn tất', 'Completed', 'completed', 'DaGiao', 'Đã giao'];
+  const completedOrders = orders.filter(o => {
+    const status = getOrderStatus(o);
+    return completedStatuses.includes(status.trim());
+  });
   
   const filteredOrders = completedOrders.filter(order => {
     if (timeRange === 'all') return true;
     
-    const orderDate = new Date(order.orderDate || Date.now());
+    const dateString = getOrderDate(order);
+    const utcDate = typeof dateString === 'string' && !dateString.endsWith('Z') ? `${dateString}Z` : dateString;
+    const orderDateObj = new Date(utcDate);
+    if (isNaN(orderDateObj.getTime())) return true; // Nếu lỗi ngày tháng, mặc định cho qua
+
     const now = new Date();
     
     if (timeRange === '30days') {
-      const diffTime = Math.abs(now - orderDate);
+      const diffTime = Math.abs(now - orderDateObj);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays <= 30;
     }
     
     if (timeRange === 'year') {
-      return orderDate.getFullYear() === now.getFullYear();
+      return orderDateObj.getFullYear() === now.getFullYear();
     }
     
     return true;
   });
 
   // 2. TÍNH TOÁN CÁC CHỈ SỐ KPI
-  const totalRevenue = filteredOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalRevenue = filteredOrders.reduce((sum, o) => sum + getOrderTotal(o), 0);
   const totalOrdersCount = filteredOrders.length;
   const avgOrderValue = totalOrdersCount > 0 ? totalRevenue / totalOrdersCount : 0;
   
   let totalBooksSold = 0;
   filteredOrders.forEach(o => {
-    const items = o.orderItems || o.items || [];
+    const items = getOrderItems(o);
     items.forEach(item => {
-      totalBooksSold += (item.quantity || 1);
+      totalBooksSold += getItemQty(item);
     });
   });
 
   // 3. NHÓM DỮ LIỆU ĐỂ VẼ BIỂU ĐỒ
   const chartDataMap = {};
   filteredOrders.forEach(o => {
-    const date = new Date(o.orderDate || Date.now());
-    const key = timeRange === '30days' 
-      ? `${date.getDate()}/${date.getMonth() + 1}` 
-      : `T${date.getMonth() + 1}/${date.getFullYear()}`;
-      
-    chartDataMap[key] = (chartDataMap[key] || 0) + (o.totalAmount || 0);
+    const dateString = getOrderDate(o);
+    const utcDate = typeof dateString === 'string' && !dateString.endsWith('Z') ? `${dateString}Z` : dateString;
+    const date = new Date(utcDate);
+    
+    if (!isNaN(date.getTime())) {
+      const key = timeRange === '30days' 
+        ? `${date.getDate()}/${date.getMonth() + 1}` 
+        : `T${date.getMonth() + 1}/${date.getFullYear()}`;
+        
+      chartDataMap[key] = (chartDataMap[key] || 0) + getOrderTotal(o);
+    }
   });
 
   const chartData = Object.keys(chartDataMap).map(key => ({
@@ -88,7 +122,7 @@ export default function ReportsPage() {
   const maxChartValue = Math.max(...chartData.map(d => d.value), 100000);
 
   if (loading) {
-    return <div style={{ padding: '40px', color: '#666' }}>Đang tổng hợp dữ liệu báo cáo...</div>;
+    return <div style={{ padding: '40px', color: '#666', textAlign: 'center', fontSize: '16px' }}>Đang tổng hợp dữ liệu báo cáo...</div>;
   }
 
   return (
@@ -202,17 +236,28 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.length > 0 ? filteredOrders.slice().sort((a,b) => new Date(b.orderDate) - new Date(a.orderDate)).map(o => {
-                const totalItems = (o.orderItems || o.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
-                const customerName = o.customerName || o.fullName || 'Khách vãng lai';
+              {filteredOrders.length > 0 ? filteredOrders.slice().sort((a,b) => {
+                const dateA = new Date(getOrderDate(a));
+                const dateB = new Date(getOrderDate(b));
+                return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+              }).map(o => {
+                const totalItems = getOrderItems(o).reduce((sum, item) => sum + getItemQty(item), 0);
+                const customerName = getCustomerName(o);
+                const orderId = getOrderId(o);
+                const totalAmount = getOrderTotal(o);
+                
+                const dateString = getOrderDate(o);
+                const utcDate = typeof dateString === 'string' && !dateString.endsWith('Z') ? `${dateString}Z` : dateString;
+                const displayDate = isNaN(new Date(utcDate).getTime()) ? new Date().toLocaleString('vi-VN') : new Date(utcDate).toLocaleString('vi-VN');
+
                 return (
-                  <tr key={o.id} style={{ borderBottom: '1px solid #f2f2f2' }}>
-                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#34495e' }}>#{o.id}</td>
-                    <td style={{ padding: '12px', color: '#666' }}>{new Date(o.orderDate || Date.now()).toLocaleString('vi-VN')}</td>
+                  <tr key={orderId} style={{ borderBottom: '1px solid #f2f2f2' }}>
+                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#34495e' }}>#{orderId}</td>
+                    <td style={{ padding: '12px', color: '#666' }}>{displayDate}</td>
                     <td style={{ padding: '12px', color: '#2c3e50' }}>{customerName}</td>
                     <td style={{ padding: '12px', textAlign: 'center', color: '#555' }}>{totalItems}</td>
                     <td style={{ padding: '12px', textAlign: 'right', color: '#16a085', fontWeight: 'bold' }}>
-                      {o.totalAmount?.toLocaleString('vi-VN')} đ
+                      {totalAmount.toLocaleString('vi-VN')} đ
                     </td>
                   </tr>
                 );

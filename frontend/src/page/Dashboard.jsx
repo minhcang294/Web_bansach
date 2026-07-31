@@ -24,6 +24,39 @@ export default function Dashboard() {
     fetchAllDashboardData();
   }, []);
 
+  // ================= CÁC HÀM "HỨNG" DỮ LIỆU ĐA NĂNG TỪ C# =================
+  const getOrderTotal = (o) => o.totalAmount ?? o.TotalAmount ?? o.total ?? o.Total ?? o.tongTien ?? o.TongTien ?? 0;
+  const getOrderStatus = (o) => o.status ?? o.Status ?? o.trangThai ?? o.TrangThai ?? '';
+  const getOrderDate = (o) => o.orderDate ?? o.OrderDate ?? o.ngayDat ?? o.NgayDat ?? Date.now();
+  const getOrderId = (o) => o.id ?? o.Id ?? o.maDonHang ?? o.MaDonHang ?? 'N/A';
+  const getOrderItems = (o) => o.orderItems ?? o.OrderItems ?? o.items ?? o.Items ?? o.chiTietDonHang ?? o.ChiTietDonHang ?? [];
+  
+  const getItemTitle = (item) => item.bookTitle ?? item.BookTitle ?? item.productName ?? item.ProductName ?? item.tenSach ?? item.TenSach ?? 'Sách';
+  const getItemQty = (item) => item.quantity ?? item.Quantity ?? item.soLuong ?? item.SoLuong ?? 1;
+
+  const getBookTitle = (b) => b.title ?? b.Title ?? b.tenSach ?? b.TenSach ?? 'Sách';
+  const getBookAuthor = (b) => b.author ?? b.Author ?? b.tacGia ?? b.TacGia ?? 'Đang cập nhật';
+  const getBookStock = (b) => {
+    const stock = b.stockQuantity ?? b.StockQuantity ?? b.quantity ?? b.Quantity ?? b.stock ?? b.Stock ?? b.soLuongTon ?? b.SoLuongTon ?? 0;
+    return parseInt(stock, 10);
+  };
+
+  // ================= HÀM FETCH CÓ TỰ ĐỘNG DÒ ĐƯỜNG DẪN =================
+  const fetchWithFallback = async (urls, headers) => {
+    for (const url of urls) {
+      try {
+        const res = await fetch(`http://localhost:5000${url}`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          return Array.isArray(data) ? data : (data.items || data.data || []);
+        }
+      } catch (error) {
+        // Bỏ qua lỗi và thử URL tiếp theo
+      }
+    }
+    return []; // Trả về mảng rỗng nếu tất cả URL đều thất bại
+  };
+
   const fetchAllDashboardData = async () => {
     setLoading(true);
     try {
@@ -32,63 +65,55 @@ export default function Dashboard() {
         'Content-Type': 'application/json' 
       };
 
-      const [ordersRes, booksRes, usersRes] = await Promise.all([
-        fetch('http://localhost:5000/api/orders/all', { headers }),
-        fetch('http://localhost:5000/api/books', { headers }),
-        fetch('http://localhost:5000/api/users', { headers }).catch(() => ({ ok: false }))
+      // Tải dữ liệu song song và tự động dò đường dẫn (chống lỗi 404)
+      const [orders, books, users] = await Promise.all([
+        fetchWithFallback(['/api/orders/all', '/api/orders', '/api/donhang'], headers),
+        fetchWithFallback(['/api/books', '/api/sach', '/api/Book'], headers),
+        fetchWithFallback(['/api/auth/users', '/api/users', '/api/khachhang'], headers)
       ]);
-
-      let orders = [];
-      let books = [];
-      let users = [];
-
-      if (ordersRes.ok) {
-        const data = await ordersRes.json();
-        orders = Array.isArray(data) ? data : (data.items || []);
-      }
-
-      if (booksRes.ok) {
-        const data = await booksRes.json();
-        books = Array.isArray(data) ? data : (data.items || data.data || []);
-      }
-
-      if (usersRes.ok) {
-        const data = await usersRes.json();
-        users = Array.isArray(data) ? data : (data.items || []);
-      }
 
       // 1. Tổng số sách
       const totalBooksCount = books.length;
 
-      // 4. Tổng doanh thu: CHỈ TÍNH CÁC ĐƠN HÀNG HOÀN TẤT ("HoanTat" hoặc "Completed")
-      const completedOrders = orders.filter(o => o.status === 'HoanTat' || o.status === 'Completed');
-      const totalRev = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-
-      // 2. Tổng khách hàng
-      const totalUsersCount = users.length > 0 ? users.length : 15;
+      // 2. Tổng khách hàng (Lọc ra Role User nếu có)
+      const customersOnly = users.filter(u => u.role === 'User' || u.Role === 'User' || !u.role);
+      const totalUsersCount = customersOnly.length > 0 ? customersOnly.length : users.length;
 
       // 3. Tổng đơn hàng
       const totalOrdersCount = orders.length;
 
-      // 5. Biểu đồ doanh thu theo tháng (Chỉ lấy các đơn hoàn tất để vẽ biểu đồ doanh thu thực tế)
+      // 4. Tổng doanh thu: Lọc chuẩn các trạng thái hoàn tất
+      const completedStatuses = ['HoanTat', 'Hoàn tất', 'Completed', 'completed', 'DaGiao', 'Đã giao'];
+      const completedOrders = orders.filter(o => {
+        const status = getOrderStatus(o);
+        return completedStatuses.includes(status.trim());
+      });
+      const totalRev = completedOrders.reduce((sum, o) => sum + getOrderTotal(o), 0);
+
+      // 5. Biểu đồ doanh thu theo tháng
       const monthlyRevMap = {};
       completedOrders.forEach(o => {
-        const date = new Date(o.orderDate || Date.now());
-        const monthYear = `Tháng ${date.getMonth() + 1}/${date.getFullYear()}`;
-        monthlyRevMap[monthYear] = (monthlyRevMap[monthYear] || 0) + (o.totalAmount || 0);
+        const dateString = getOrderDate(o);
+        const utcDate = typeof dateString === 'string' && !dateString.endsWith('Z') ? `${dateString}Z` : dateString;
+        const date = new Date(utcDate);
+        
+        if (!isNaN(date.getTime())) {
+          const monthYear = `Tháng ${date.getMonth() + 1}/${date.getFullYear()}`;
+          monthlyRevMap[monthYear] = (monthlyRevMap[monthYear] || 0) + getOrderTotal(o);
+        }
       });
       const monthlyRevenueData = Object.keys(monthlyRevMap).map(m => ({
         month: m,
         revenue: monthlyRevMap[m]
       })).slice(-6);
 
-      // 6. Top 5 sách bán chạy
+      // 6. Top 5 sách bán chạy (tính trên toàn bộ đơn hàng)
       const bookSalesCount = {};
       orders.forEach(o => {
-        const items = o.orderItems || o.items || [];
+        const items = getOrderItems(o);
         items.forEach(item => {
-          const title = item.bookTitle || item.productName || item.title || 'Sách bán chạy';
-          bookSalesCount[title] = (bookSalesCount[title] || 0) + (item.quantity || 1);
+          const title = getItemTitle(item);
+          bookSalesCount[title] = (bookSalesCount[title] || 0) + getItemQty(item);
         });
       });
       const topBooks = Object.keys(bookSalesCount)
@@ -97,13 +122,14 @@ export default function Dashboard() {
         .slice(0, 5);
 
       // 7. Đơn hàng mới nhất
-      const sortedRecentOrders = [...orders].sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0)).slice(0, 5);
+      const sortedRecentOrders = [...orders].sort((a, b) => {
+        const dateA = new Date(getOrderDate(a));
+        const dateB = new Date(getOrderDate(b));
+        return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+      }).slice(0, 5);
 
       // 8. Cảnh báo sách sắp hết hàng (< 5 cuốn)
-      const lowStock = books.filter(b => {
-        const stock = b.stockQuantity ?? b.soLuongTon ?? b.soluongTon ?? b.SOLUONGTON ?? b.stock ?? 0;
-        return Number(stock) < 5;
-      });
+      const lowStock = books.filter(b => getBookStock(b) < 5);
 
       setStats({
         totalBooks: totalBooksCount,
@@ -111,7 +137,7 @@ export default function Dashboard() {
         totalOrders: totalOrdersCount,
         totalRevenue: totalRev,
         monthlyRevenue: monthlyRevenueData,
-        topSellingBooks: topBooks.length > 0 ? topBooks : [{ title: 'Bên Nhau Trọn Đời', sold: 2 }],
+        topSellingBooks: topBooks.length > 0 ? topBooks : [],
         recentOrders: sortedRecentOrders,
         lowStockBooks: lowStock
       });
@@ -202,11 +228,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 4. Tổng doanh thu (Chỉ tính đơn Hoàn tất) */}
+        {/* 4. Tổng doanh thu */}
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', borderLeft: '4px solid #2ecc71' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ margin: '0 0 5px 0', color: '#7f8c8d', fontSize: '13px', fontWeight: 'bold' }}>💰 TỔNG DOANH THU</p>
+              <p style={{ margin: '0 0 5px 0', color: '#7f8c8d', fontSize: '13px', fontWeight: 'bold' }}>💰 DOANH THU THỰC</p>
               <h3 style={{ margin: 0, color: '#27ae60', fontSize: '20px' }}>{stats.totalRevenue.toLocaleString('vi-VN')} đ</h3>
             </div>
             <div style={{ backgroundColor: '#eafaf1', padding: '12px', borderRadius: '50%', color: '#2ecc71' }}>
@@ -248,7 +274,7 @@ export default function Dashboard() {
             <FaFire color="#e67e22" /> Top sách bán chạy
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {stats.topSellingBooks.map((b, idx) => (
+            {stats.topSellingBooks.length > 0 ? stats.topSellingBooks.map((b, idx) => (
               <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid #f2f2f2' }}>
                 <span style={{ fontSize: '14px', color: '#2c3e50', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
                   {idx + 1}. {b.title}
@@ -257,7 +283,9 @@ export default function Dashboard() {
                   Đã bán: {b.sold}
                 </span>
               </div>
-            ))}
+            )) : (
+              <div style={{ textAlign: 'center', color: '#888', paddingTop: '30px' }}>Chưa có dữ liệu đơn hàng.</div>
+            )}
           </div>
         </div>
 
@@ -281,23 +309,27 @@ export default function Dashboard() {
                 <th style={{ padding: '10px' }}>Mã đơn</th>
                 <th style={{ padding: '10px' }}>Ngày đặt</th>
                 <th style={{ padding: '10px' }}>Tổng tiền</th>
-                <th style={{ padding: '10px' }}>Trạng thái</th>
               </tr>
             </thead>
             <tbody>
-              {stats.recentOrders.length > 0 ? stats.recentOrders.map(o => (
-                <tr key={o.id} style={{ borderBottom: '1px solid #f2f2f2' }}>
-                  <td style={{ padding: '10px', fontWeight: 'bold', color: '#34495e' }}>#{o.id}</td>
-                  <td style={{ padding: '10px', color: '#666' }}>{new Date(o.orderDate || Date.now()).toLocaleDateString('vi-VN')}</td>
-                  <td style={{ padding: '10px', color: '#e74c3c', fontWeight: 'bold' }}>{o.totalAmount?.toLocaleString('vi-VN')} đ</td>
-                  <td style={{ padding: '10px' }}>
-                    <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '10px', backgroundColor: o.status === 'ChoXuLy' ? '#e1f5fe' : '#d4edda', color: o.status === 'ChoXuLy' ? '#0288d1' : '#155724', fontWeight: 'bold' }}>
-                      {o.status === 'ChoXuLy' ? 'Chờ xử lý' : o.status}
-                    </span>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>Chưa có đơn hàng nào.</td></tr>
+              {stats.recentOrders.length > 0 ? stats.recentOrders.map(o => {
+                const status = o.status ?? o.Status ?? o.trangThai ?? o.TrangThai ?? '';
+                const total = o.totalAmount ?? o.TotalAmount ?? o.total ?? o.Total ?? o.tongTien ?? o.TongTien ?? 0;
+                const id = o.id ?? o.Id ?? o.maDonHang ?? o.MaDonHang ?? 'N/A';
+                const dateString = o.orderDate ?? o.OrderDate ?? o.ngayDat ?? o.NgayDat ?? Date.now();
+                const utcDate = typeof dateString === 'string' && !dateString.endsWith('Z') ? `${dateString}Z` : dateString;
+                const dateObj = new Date(utcDate);
+                const displayDate = isNaN(dateObj.getTime()) ? new Date().toLocaleDateString('vi-VN') : dateObj.toLocaleDateString('vi-VN');
+
+                return (
+                  <tr key={id} style={{ borderBottom: '1px solid #f2f2f2' }}>
+                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#34495e' }}>#{id}</td>
+                    <td style={{ padding: '10px', color: '#666' }}>{displayDate}</td>
+                    <td style={{ padding: '10px', color: '#e74c3c', fontWeight: 'bold' }}>{total.toLocaleString('vi-VN')} đ</td>
+                  </tr>
+                );
+              }) : (
+                <tr><td colSpan="3" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>Chưa có đơn hàng nào.</td></tr>
               )}
             </tbody>
           </table>
@@ -322,11 +354,15 @@ export default function Dashboard() {
             </thead>
             <tbody>
               {stats.lowStockBooks.length > 0 ? stats.lowStockBooks.map(b => {
-                const stockVal = b.stockQuantity ?? b.soLuongTon ?? b.soluongTon ?? b.SOLUONGTON ?? b.stock ?? 0;
+                const stockVal = b.stockQuantity ?? b.StockQuantity ?? b.quantity ?? b.Quantity ?? b.stock ?? b.Stock ?? b.soLuongTon ?? b.SoLuongTon ?? 0;
+                const title = b.title ?? b.Title ?? b.tenSach ?? b.TenSach ?? 'Sách';
+                const author = b.author ?? b.Author ?? b.tacGia ?? b.TacGia ?? 'Đang cập nhật';
+                const id = b.id ?? b.Id ?? b.maSach ?? b.MaSach;
+
                 return (
-                  <tr key={b.id || b.maSach} style={{ borderBottom: '1px solid #f2f2f2' }}>
-                    <td style={{ padding: '10px', fontWeight: '600', color: '#2c3e50' }}>{b.title || b.tenSach}</td>
-                    <td style={{ padding: '10px', color: '#666' }}>{b.author || b.tacGia || 'Đang cập nhật'}</td>
+                  <tr key={id} style={{ borderBottom: '1px solid #f2f2f2' }}>
+                    <td style={{ padding: '10px', fontWeight: '600', color: '#2c3e50' }}>{title}</td>
+                    <td style={{ padding: '10px', color: '#666' }}>{author}</td>
                     <td style={{ padding: '10px', textAlign: 'center' }}>
                       <span style={{ backgroundColor: '#fdedec', color: '#c0392b', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}>
                         {stockVal} cuốn

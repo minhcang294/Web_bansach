@@ -8,19 +8,31 @@ namespace BookStore.API.Repositories.Implementations;
 public class SachRepository : ISachRepository
 {
     private readonly ApplicationDbContext _context;
-    public SachRepository(ApplicationDbContext context) => _context = context;
+
+    public SachRepository(ApplicationDbContext context)
+    {
+        _context = context;
+    }
 
     public async Task<(List<Sach> items, int total)> SearchAsync(string? keyword, string? maDanhMuc, int page, int pageSize)
     {
-        var query = _context.Saches.Include(s => s.Gom).ThenInclude(g => g.DanhMuc).AsQueryable();
+        var query = _context.Saches
+            .Include(s => s.Gom)
+            .ThenInclude(g => g.DanhMuc)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(keyword))
+        {
             query = query.Where(s => s.TenSach.Contains(keyword) || (s.TacGia != null && s.TacGia.Contains(keyword)));
+        }
 
         if (!string.IsNullOrWhiteSpace(maDanhMuc))
+        {
             query = query.Where(s => s.Gom.Any(g => g.MaDanhMuc == maDanhMuc));
+        }
 
         var total = await query.CountAsync();
+        
         var items = await query
             .OrderBy(s => s.TenSach)
             .Skip((page - 1) * pageSize)
@@ -30,12 +42,23 @@ public class SachRepository : ISachRepository
         return (items, total);
     }
 
-    public async Task<Sach?> GetByIdAsync(string id) =>
-        await _context.Saches.Include(s => s.Gom).ThenInclude(g => g.DanhMuc).FirstOrDefaultAsync(s => s.MaSach == id);
+    public async Task<Sach?> GetByIdAsync(string id)
+    {
+        return await _context.Saches
+            .Include(s => s.Gom)
+            .ThenInclude(g => g.DanhMuc)
+            .FirstOrDefaultAsync(s => s.MaSach == id);
+    }
 
-    public async Task<List<DanhMuc>> GetDanhMucsAsync() => await _context.DanhMucs.ToListAsync();
+    public async Task<List<DanhMuc>> GetDanhMucsAsync()
+    {
+        return await _context.DanhMucs.ToListAsync();
+    }
 
-    public async Task<bool> ExistsAsync(string id) => await _context.Saches.AnyAsync(s => s.MaSach == id);
+    public async Task<bool> ExistsAsync(string id)
+    {
+        return await _context.Saches.AnyAsync(s => s.MaSach == id);
+    }
 
     public async Task<Sach> AddAsync(Sach sach, string maDanhMuc)
     {
@@ -68,9 +91,6 @@ public class SachRepository : ISachRepository
         return true;
     }
 
-    // ==========================================
-    // THÊM MỚI: Lấy tất cả sách (Để đếm số lượng tồn kho)
-    // ==========================================
     public async Task<List<Sach>> GetAllAsync()
     {
         return await _context.Saches.ToListAsync();

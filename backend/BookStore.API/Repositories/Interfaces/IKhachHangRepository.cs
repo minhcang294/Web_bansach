@@ -12,10 +12,7 @@ public interface IKhachHangRepository
     Task<List<KhachHang>> GetAllAsync();
     Task<KhachHang?> GetByIdAsync(string id);
     Task DeleteAsync(KhachHang khachHang);
-<<<<<<< HEAD
     
  
-=======
->>>>>>> a41405f80f37a4b1af45c39748aea2f2078e7a41
     Task UpdateAsync(KhachHang khachHang);
 }

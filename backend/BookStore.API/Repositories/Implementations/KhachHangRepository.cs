@@ -55,7 +55,6 @@ public class KhachHangRepository : IKhachHangRepository
         _context.KhachHangs.Remove(khachHang);
         await _context.SaveChangesAsync();
     }
-<<<<<<< HEAD
 
     // ==========================================
     // BỔ SUNG: HÀM CẬP NHẬT THÔNG TIN
@@ -65,11 +64,4 @@ public class KhachHangRepository : IKhachHangRepository
         _context.KhachHangs.Update(khachHang);
         await _context.SaveChangesAsync();
     }
-=======
-    public async Task UpdateAsync(KhachHang khachHang)
-{
-    _context.KhachHangs.Update(khachHang);
-    await _context.SaveChangesAsync();
-}
->>>>>>> a41405f80f37a4b1af45c39748aea2f2078e7a41
 }
