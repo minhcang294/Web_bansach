@@ -6,6 +6,7 @@ using BookStore.API.Repositories.Implementations;
 using BookStore.API.Services.Interfaces;
 using BookStore.API.Services.Implementations;
 using BookStore.API.Helpers; 
+using BookStore.API.Hubs; // 🟢 BỔ SUNG 1: Khai báo namespace chứa SignalR Hub
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -24,6 +25,9 @@ builder.Services.AddScoped<ISachRepository, SachRepository>();
 builder.Services.AddScoped<IGioHangRepository, GioHangRepository>();
 builder.Services.AddScoped<IHoaDonRepository, HoaDonRepository>();
 
+// Đăng ký DI cho Nhật ký hoạt động (Activity Log)
+builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICartService, CartService>();
@@ -31,6 +35,9 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSingleton<JwtTokenGenerator>();
+
+// 🟢 BỔ SUNG 2: Đăng ký dịch vụ SignalR cho hệ thống Real-time
+builder.Services.AddSignalR();
 
 // Cấu hình Controller và JSON để tránh lỗi vòng lặp (Object Cycle)
 builder.Services.AddControllers()
@@ -57,12 +64,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         
-        // ⭐ SỬA QUAN TRỌNG: Khớp tên khóa quyền "role" do Token Generator sinh ra
-      //  RoleClaimType = "role" 
+        // Khớp tên khóa quyền "role" do Token Generator sinh ra
+        // RoleClaimType = "role" 
     };
 });
 
-// 4. Cấu hình CORS (Cho phép ReactJS gọi API)
+// 4. Cấu hình CORS (Cho phép ReactJS gọi API & kết nối WebSocket của SignalR)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -70,7 +77,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials(); // Bắt buộc phải có để SignalR truyền Credential qua WebSocket
     });
 });
 
@@ -111,5 +118,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// 🟢 BỔ SUNG 3: Định tuyến đường dẫn kết nối SignalR Hub cho Client (ReactJS)
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

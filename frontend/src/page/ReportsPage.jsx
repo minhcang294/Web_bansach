@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FaDollarSign, FaFileInvoiceDollar, FaBook, 
-  FaChartBar, FaCalendarAlt, FaFilter
+  FaChartBar, FaCalendarAlt, FaFilter, FaFileExcel // THÊM ICON EXCEL
 } from 'react-icons/fa';
+
+// THÊM THƯ VIỆN XUẤT EXCEL
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState([]);
@@ -15,7 +19,7 @@ export default function ReportsPage() {
     fetchData();
   }, []);
 
-  // ================= CÁC HÀM "HỨNG" DỮ LIỆU ĐA NĂNG TỪ C# =================
+  // ================= CÁC HÀM "HỨNG" DỮ LIỆU ĐA NĂNG =================
   const getOrderTotal = (o) => o.totalAmount ?? o.TotalAmount ?? o.total ?? o.Total ?? o.tongTien ?? o.TongTien ?? 0;
   const getOrderStatus = (o) => o.status ?? o.Status ?? o.trangThai ?? o.TrangThai ?? '';
   const getOrderDate = (o) => o.orderDate ?? o.OrderDate ?? o.ngayDat ?? o.NgayDat ?? Date.now();
@@ -24,18 +28,16 @@ export default function ReportsPage() {
   const getItemQty = (item) => item.quantity ?? item.Quantity ?? item.soLuong ?? item.SoLuong ?? 1;
   const getCustomerName = (o) => o.customerName ?? o.CustomerName ?? o.fullName ?? o.FullName ?? o.hoTenKh ?? o.HoTenKh ?? 'Khách vãng lai';
 
-  // ================= HÀM FETCH CÓ TỰ ĐỘNG DÒ ĐƯỜNG DẪN =================
+  // ================= HÀM FETCH =================
   const fetchWithFallback = async (urls, headers) => {
     for (const url of urls) {
       try {
         const res = await fetch(`http://localhost:5000${url}`, { headers });
         if (res.ok) {
           const data = await res.json();
-          return Array.isArray(data) ? data : (data.items || data.data || []);
+          return Array.isArray(data) ? data : (data.items || data.data || data.$values || []);
         }
-      } catch (error) {
-        // Bỏ qua và thử đường dẫn tiếp theo
-      }
+      } catch (error) { }
     }
     return []; 
   };
@@ -53,7 +55,7 @@ export default function ReportsPage() {
     }
   };
 
-  // 1. LỌC ĐƠN HÀNG HỢP LỆ (Chỉ tính đơn Hoàn tất) & THEO THỜI GIAN
+  // 1. LỌC ĐƠN HÀNG HỢP LỆ & THEO THỜI GIAN
   const completedStatuses = ['HoanTat', 'Hoàn tất', 'Completed', 'completed', 'DaGiao', 'Đã giao'];
   const completedOrders = orders.filter(o => {
     const status = getOrderStatus(o);
@@ -66,7 +68,7 @@ export default function ReportsPage() {
     const dateString = getOrderDate(order);
     const utcDate = typeof dateString === 'string' && !dateString.endsWith('Z') ? `${dateString}Z` : dateString;
     const orderDateObj = new Date(utcDate);
-    if (isNaN(orderDateObj.getTime())) return true; // Nếu lỗi ngày tháng, mặc định cho qua
+    if (isNaN(orderDateObj.getTime())) return true; 
 
     const now = new Date();
     
@@ -121,6 +123,70 @@ export default function ReportsPage() {
 
   const maxChartValue = Math.max(...chartData.map(d => d.value), 100000);
 
+  // ================= XỬ LÝ XUẤT FILE EXCEL =================
+  const handleExportExcel = () => {
+    if (filteredOrders.length === 0) {
+      alert("Chưa có dữ liệu để xuất báo cáo!");
+      return;
+    }
+
+    // 1. Chuyển đổi dữ liệu đơn hàng thành định dạng bảng Excel
+    const excelData = filteredOrders.slice().sort((a,b) => {
+      const dateA = new Date(getOrderDate(a));
+      const dateB = new Date(getOrderDate(b));
+      return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+    }).map((o, index) => {
+      const totalItems = getOrderItems(o).reduce((sum, item) => sum + getItemQty(item), 0);
+      const dateString = getOrderDate(o);
+      const utcDate = typeof dateString === 'string' && !dateString.endsWith('Z') ? `${dateString}Z` : dateString;
+      const displayDate = isNaN(new Date(utcDate).getTime()) ? new Date().toLocaleString('vi-VN') : new Date(utcDate).toLocaleString('vi-VN');
+
+      return {
+        "STT": index + 1,
+        "Mã Đơn Hàng": getOrderId(o),
+        "Ngày Hoàn Tất": displayDate,
+        "Tên Khách Hàng": getCustomerName(o),
+        "Số Lượng Sách": totalItems,
+        "Tổng Tiền (VNĐ)": getOrderTotal(o)
+      };
+    });
+
+    // 2. Thêm dòng tổng kết ở cuối file Excel
+    excelData.push({
+      "STT": "",
+      "Mã Đơn Hàng": "",
+      "Ngày Hoàn Tất": "",
+      "Tên Khách Hàng": "TỔNG CỘNG:",
+      "Số Lượng Sách": totalBooksSold,
+      "Tổng Tiền (VNĐ)": totalRevenue
+    });
+
+    // 3. Tạo Worksheet và Workbook
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Tự động căn chỉnh độ rộng cột cho đẹp
+    const wscols = [
+      { wch: 5 },  // STT
+      { wch: 20 }, // Mã đơn
+      { wch: 22 }, // Ngày
+      { wch: 30 }, // Khách
+      { wch: 15 }, // Số lượng
+      { wch: 20 }  // Tiền
+    ];
+    worksheet['!cols'] = wscols;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "BaoCaoDoanhThu");
+
+    // 4. Sinh file và tải về
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    
+    // Tạo tên file theo bộ lọc
+    const timeLabel = timeRange === '30days' ? '30Ngay' : timeRange === 'year' ? 'NamNay' : 'ToanThoiGian';
+    saveAs(dataBlob, `BaoCao_DoanhThu_${timeLabel}.xlsx`);
+  };
+
   if (loading) {
     return <div style={{ padding: '40px', color: '#666', textAlign: 'center', fontSize: '16px' }}>Đang tổng hợp dữ liệu báo cáo...</div>;
   }
@@ -128,8 +194,8 @@ export default function ReportsPage() {
   return (
     <div style={{ padding: '25px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
       
-      {/* ================= HEADER & BỘ LỌC ================= */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', marginBottom: '25px' }}>
+     {/* ================= HEADER & BỘ LỌC ================= */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '25px' }}>
         <div>
           <h2 style={{ margin: '0 0 5px 0', color: '#2c3e50', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FaChartBar color="#1abc9c" /> Báo cáo doanh thu & Thống kê
@@ -137,18 +203,44 @@ export default function ReportsPage() {
           <p style={{ margin: 0, color: '#7f8c8d', fontSize: '14px' }}>Phân tích hiệu quả kinh doanh dựa trên các đơn hàng đã giao thành công.</p>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#fff', padding: '8px 15px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <FaFilter color="#888" />
-          <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>Thời gian:</span>
-          <select 
-            value={timeRange} 
-            onChange={(e) => setTimeRange(e.target.value)}
-            style={{ border: 'none', outline: 'none', fontWeight: 'bold', color: '#1abc9c', cursor: 'pointer', backgroundColor: 'transparent' }}
+        {/* KHỐI NÚT ĐÃ ĐƯỢC CÂN BẰNG */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          
+          {/* 1. Khối chọn thời gian */}
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#fff', 
+            padding: '0 16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+            height: '40px', boxSizing: 'border-box' // Cố định chiều cao 40px
+          }}>
+            <FaFilter color="#888" size={13} />
+            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333', whiteSpace: 'nowrap' }}>Thời gian:</span>
+            <select 
+              value={timeRange} 
+              onChange={(e) => setTimeRange(e.target.value)}
+              style={{ border: 'none', outline: 'none', fontWeight: 'bold', color: '#1abc9c', cursor: 'pointer', backgroundColor: 'transparent', fontSize: '14px' }}
+            >
+              <option value="30days">30 Ngày gần nhất</option>
+              <option value="year">Trong năm nay</option>
+              <option value="all">Toàn thời gian</option>
+            </select>
+          </div>
+
+          {/* 2. Nút Xuất Excel */}
+          <button 
+            onClick={handleExportExcel}
+            style={{ 
+              backgroundColor: '#27ae60', color: 'white', border: 'none', padding: '0 18px', 
+              borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', 
+              fontWeight: 'bold', fontSize: '14px', boxShadow: '0 2px 6px rgba(39, 174, 96, 0.3)',
+              transition: '0.2s', height: '40px', boxSizing: 'border-box', // Cố định chiều cao 40px cho bằng khối bên trái
+              whiteSpace: 'nowrap', width: 'fit-content' // Ép không cho nút tự kéo giãn dài ra
+            }}
+            onMouseOver={(e) => Object.assign(e.currentTarget.style, { backgroundColor: '#219a52', transform: 'translateY(-2px)' })}
+            onMouseOut={(e) => Object.assign(e.currentTarget.style, { backgroundColor: '#27ae60', transform: 'translateY(0)' })}
           >
-            <option value="30days">30 Ngày gần nhất</option>
-            <option value="year">Trong năm nay</option>
-            <option value="all">Toàn thời gian</option>
-          </select>
+            <FaFileExcel size={15} /> Xuất Excel
+          </button>
+          
         </div>
       </div>
 

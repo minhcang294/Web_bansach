@@ -7,6 +7,7 @@ public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
+    // ===== DANH SÁCH CÁC BẢNG TRONG DATABASE =====
     public DbSet<Sach> Saches => Set<Sach>();
     public DbSet<DanhMuc> DanhMucs => Set<DanhMuc>();
     public DbSet<Gom> Goms => Set<Gom>();
@@ -18,9 +19,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<HoaDon> HoaDons => Set<HoaDon>();
     public DbSet<ChiTietHoaDon> ChiTietHoaDons => Set<ChiTietHoaDon>();
     
-    // ===== BỔ SUNG CHO MỤC NHẬP KHO =====
+    // BỔ SUNG CHO MỤC NHẬP KHO
     public DbSet<PhieuNhap> PhieuNhaps => Set<PhieuNhap>();
     public DbSet<ChiTietPhieuNhap> ChiTietPhieuNhaps => Set<ChiTietPhieuNhap>();
+
+    // BỔ SUNG CHO MỤC NHẬT KÝ HOẠT ĐỘNG (MỚI)
+   public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -73,7 +77,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ChiTietHoaDon>()
             .HasOne(c => c.Sach).WithMany().HasForeignKey(c => c.MaSach);
 
-        // ===== PHIEUNHAP & CHITIETPHIEUNHAP (MỚI) =====
+        // ===== PHIEUNHAP & CHITIETPHIEUNHAP =====
         modelBuilder.Entity<PhieuNhap>()
             .HasOne(p => p.NhaCungCap).WithMany().HasForeignKey(p => p.MaNhaCungCap);
         modelBuilder.Entity<PhieuNhap>()

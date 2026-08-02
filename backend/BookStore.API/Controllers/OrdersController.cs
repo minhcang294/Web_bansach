@@ -1,8 +1,11 @@
 using BookStore.API.Helpers;
 using BookStore.API.Models.DTOs.Order;
 using BookStore.API.Services.Interfaces;
+using BookStore.API.Repositories.Interfaces; 
+using BookStore.API.Hubs; // 🟢 BỔ SUNG 1: Khai báo thư viện Hubs để dùng SignalR
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR; // 🟢 BỔ SUNG 2: Khai báo thư viện SignalR
 using System.Text.Json;
 
 namespace BookStore.API.Controllers;
@@ -13,10 +16,18 @@ namespace BookStore.API.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly IActivityLogRepository _activityLogRepo; 
+    private readonly IHubContext<NotificationHub> _hubContext; // 🟢 BỔ SUNG 3: Biến chứa SignalR Hub Context
 
-    public OrdersController(IOrderService orderService) 
+    // 🟢 BỔ SUNG 4: Tiêm IHubContext vào constructor
+    public OrdersController(
+        IOrderService orderService, 
+        IActivityLogRepository activityLogRepo,
+        IHubContext<NotificationHub> hubContext) 
     {
         _orderService = orderService;
+        _activityLogRepo = activityLogRepo;
+        _hubContext = hubContext;
     }
 
     // ==========================================
@@ -31,8 +42,27 @@ public class OrdersController : ControllerBase
 
         try
         {
-            // Truyền toàn bộ dto (đã có Tên, Email, SĐT, Địa chỉ, PTTT, Ghi chú) sang Service
             var order = await _orderService.CreateOrderAsync(this.GetUserId(), dto);
+            
+            // ---> GHI LOG HỆ THỐNG <---
+            var userName = User.Identity?.Name ?? this.GetUserId(); 
+            await _activityLogRepo.LogActionAsync(
+                userId: userName,
+                action: "Thêm mới", 
+                entityType: "Đơn hàng",
+                details: $"Đã đặt thành công đơn hàng (Mã đơn: {order.Id} - Tổng tiền: {order.TotalAmount:N0}đ)"
+            );
+
+            // 🟢 BỔ SUNG 5: PHÁT SÓNG THÔNG BÁO REAL-TIME TỚI TẤT CẢ ADMIN QUA SIGNALR
+            await _hubContext.Clients.All.SendAsync("ReceiveNotification", new {
+                id = Guid.NewGuid().ToString(),
+                type = "order",
+                title = "Có đơn hàng mới",
+                message = $"Khách hàng {userName} vừa đặt đơn hàng mới (Mã: {order.Id} - Tổng tiền: {order.TotalAmount:N0}đ)",
+                time = "Vừa xong",
+                isRead = false
+            });
+
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
         }
         catch (Exception ex)
@@ -145,7 +175,6 @@ public class OrdersController : ControllerBase
             var userId = this.GetUserId();
             var isAdminOrStaff = User.IsInRole("Admin") || User.IsInRole("Staff");
 
-            // 1. Kiểm tra đơn hàng có tồn tại và thuộc quyền truy cập không
             var currentOrder = isAdminOrStaff 
                 ? await _orderService.GetByIdForAdminAsync(id) 
                 : await _orderService.GetByIdAsync(userId, id);
@@ -155,18 +184,16 @@ public class OrdersController : ControllerBase
                 return NotFound(new { message = "Không tìm thấy đơn hàng hoặc đơn hàng không thuộc về bạn." });
             }
 
-            // 2. Chặn thay đổi nếu đơn hàng đã bị hủy
             string currentStatusCheck = currentOrder.Status?.Trim() ?? "";
             if (currentStatusCheck == "Đã hủy" || currentStatusCheck == "DaHuy")
             {
                 return BadRequest(new { message = "Đơn hàng này đã ở trạng thái 'Đã hủy', không thể thay đổi trạng thái." });
             }
 
-            string finalStatus = "Đã hủy"; // Mặc định dành cho Khách hàng (chỉ có quyền hủy)
+            string finalStatus = "Đã hủy"; 
 
             if (isAdminOrStaff)
             {
-                // Xử lý dynamic body cho Admin/Staff vì đôi lúc gửi dạng string, đôi lúc gửi object
                 if (rawDto is JsonElement jsonElement)
                 {
                     if (jsonElement.ValueKind == JsonValueKind.Object && 
@@ -190,7 +217,6 @@ public class OrdersController : ControllerBase
             }
             else 
             {
-                // Khách hàng: Chỉ cho phép Hủy nếu đơn đang "Chờ xử lý"
                 bool isPending = currentStatusCheck == "Chờ xử lý" || currentStatusCheck == "ChoXuLy" || currentStatusCheck.Equals("Chờ xử lý", StringComparison.OrdinalIgnoreCase);
 
                 if (!isPending)
@@ -199,8 +225,19 @@ public class OrdersController : ControllerBase
                 }
             }
 
-            // 3. Gọi Service thực thi cập nhật Database
             await _orderService.UpdateStatusAsync(id, finalStatus);
+            
+            var userName = User.Identity?.Name ?? userId;
+            var actionName = finalStatus == "Đã hủy" ? "Xóa" : "Cập nhật"; 
+            var actionDetail = finalStatus == "Đã hủy" ? "Đã hủy" : $"Cập nhật trạng thái thành '{finalStatus}'";
+            
+            await _activityLogRepo.LogActionAsync(
+                userId: userName,
+                action: actionName,
+                entityType: "Đơn hàng",
+                details: $"{actionDetail} cho đơn hàng có mã: {id}"
+            );
+
             return Ok(new { message = "Cập nhật trạng thái thành công." });
         }
         catch (Exception ex)

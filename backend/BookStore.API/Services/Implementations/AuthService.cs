@@ -24,28 +24,37 @@ public class AuthService : IAuthService
 
     public async Task<bool> EmailExistsAsync(string email)
     {
-        return await _khachHangRepository.EmailExistsAsync(email);
+        return await _khachHangRepository.EmailExistsAsync(email) || 
+               await _nhanVienRepository.GetByEmailAsync(email) != null;
     }
 
     public async Task<bool> ResetPasswordAsync(string email, string newPassword)
     {
         var khachHang = await _khachHangRepository.GetByEmailAsync(email);
-        if (khachHang == null) return false;
+        if (khachHang != null)
+        {
+            khachHang.MatKhau = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _khachHangRepository.UpdateAsync(khachHang);
+            return true;
+        }
 
-        khachHang.MatKhau = BCrypt.Net.BCrypt.HashPassword(newPassword);
-        await _khachHangRepository.UpdateAsync(khachHang);
-        return true;
+        var nhanVien = await _nhanVienRepository.GetByEmailAsync(email);
+        if (nhanVien != null)
+        {
+            nhanVien.MatKhau = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _nhanVienRepository.UpdateAsync(nhanVien);
+            return true;
+        }
+        return false;
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
-        // 1. Kiểm tra Nhân viên/Admin
         var nhanVien = await _nhanVienRepository.GetByEmailAsync(dto.Email);
         if (nhanVien != null && IsPasswordMatch(dto.Password, nhanVien.MatKhau))
         {
             if (nhanVien.TrangThai == 0) throw new AuthException("Tài khoản đã bị khóa.", 403);
             
-            // 👉 Chuẩn hóa Role an toàn, loại bỏ khoảng trắng và không phân biệt hoa thường
             string dbRole = nhanVien.Role?.Trim() ?? nhanVien.VaiTroPhuTrach?.Trim() ?? "Staff";
             string role = "Staff";
             if (dbRole.Equals("Admin", StringComparison.OrdinalIgnoreCase)) role = "Admin";
@@ -54,12 +63,10 @@ public class AuthService : IAuthService
             return BuildAuthResponse(nhanVien.MaNhanVien, nhanVien.Email, nhanVien.TenNv ?? "Admin", role);
         }
 
-        // 2. Kiểm tra Khách hàng
         var khachHang = await _khachHangRepository.GetByEmailAsync(dto.Email);
         if (khachHang != null && IsPasswordMatch(dto.Password, khachHang.MatKhau))
         {
             if (khachHang.TrangThai == 0) throw new AuthException("Tài khoản đã bị khóa.", 403);
-            // ĐÃ SỬA: Đồng bộ từ "Customer" thành "User" để khớp với hệ thống phân quyền và giao diện React
             return BuildAuthResponse(khachHang.MaKhachHang, khachHang.Email, khachHang.HoTenKh ?? "Khách hàng", "User");
         }
 
@@ -68,7 +75,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
-        if (await _khachHangRepository.EmailExistsAsync(dto.Email))
+        if (await EmailExistsAsync(dto.Email))
             throw new AuthException("Email này đã được sử dụng.", 409);
 
         var maKhachHang = "KH" + DateTime.UtcNow.Ticks.ToString()[^8..];
@@ -84,7 +91,6 @@ public class AuthService : IAuthService
         };
 
         await _khachHangRepository.AddAsync(newKhachHang);
-        // ĐÃ SỬA: Đồng bộ role thành "User"
         return BuildAuthResponse(newKhachHang.MaKhachHang, newKhachHang.Email, newKhachHang.HoTenKh ?? "", "User");
     }
 
@@ -94,8 +100,8 @@ public class AuthService : IAuthService
 
         if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase) || role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
         {
-            if (await _nhanVienRepository.GetByEmailAsync(dto.Email) != null)
-                throw new AuthException("Email này đã được sử dụng cho một nhân viên khác.", 409);
+            if (await EmailExistsAsync(dto.Email))
+                throw new AuthException("Email này đã tồn tại trong hệ thống.", 409);
 
             var maNhanVien = "NV" + DateTime.UtcNow.Ticks.ToString()[^8..];
             var newNhanVien = new NhanVien
@@ -124,14 +130,18 @@ public class AuthService : IAuthService
             throw new AuthException("Email từ Google không hợp lệ.", 400);
 
         var khachHang = await _khachHangRepository.GetByEmailAsync(email);
-
         if (khachHang != null)
         {
-            if (khachHang.TrangThai == 0) 
-                throw new AuthException("Tài khoản đã bị khóa.", 403);
-
-            // ĐÃ SỬA: Đồng bộ role thành "User"
+            if (khachHang.TrangThai == 0) throw new AuthException("Tài khoản đã bị khóa.", 403);
             return BuildAuthResponse(khachHang.MaKhachHang, khachHang.Email, khachHang.HoTenKh ?? "Khách hàng", "User");
+        }
+
+        var nhanVien = await _nhanVienRepository.GetByEmailAsync(email);
+        if (nhanVien != null)
+        {
+            if (nhanVien.TrangThai == 0) throw new AuthException("Tài khoản đã bị khóa.", 403);
+            string role = nhanVien.Role ?? "Staff";
+            return BuildAuthResponse(nhanVien.MaNhanVien, nhanVien.Email, nhanVien.TenNv ?? "Admin", role);
         }
 
         var maKhachHang = "KH" + DateTime.UtcNow.Ticks.ToString()[^8..];
@@ -147,8 +157,6 @@ public class AuthService : IAuthService
         };
 
         await _khachHangRepository.AddAsync(newKhachHang);
-
-        // ĐÃ SỬA: Đồng bộ role thành "User"
         return BuildAuthResponse(newKhachHang.MaKhachHang, newKhachHang.Email, newKhachHang.HoTenKh ?? "", "User");
     }
 
@@ -159,24 +167,30 @@ public class AuthService : IAuthService
         var nhanViens = await _nhanVienRepository.GetAllAsync();
         if (nhanViens != null)
         {
-            users.AddRange(nhanViens.Select(nv => new {
-                Id = nv.MaNhanVien,
-                FullName = nv.TenNv ?? "Chưa cập nhật",
-                Email = nv.Email,
-                Role = !string.IsNullOrWhiteSpace(nv.Role) ? nv.Role : (nv.VaiTroPhuTrach ?? "Staff"),
-                Status = nv.TrangThai
+            // LỌC: Ẩn đi các tài khoản cũ đã bị thuyên chuyển (migrated)
+            users.AddRange(nhanViens
+                .Where(nv => nv.Email != null && !nv.Email.Contains("_migrated"))
+                .Select(nv => new {
+                    Id = nv.MaNhanVien,
+                    FullName = nv.TenNv ?? "Chưa cập nhật",
+                    Email = nv.Email,
+                    Role = !string.IsNullOrWhiteSpace(nv.Role) ? nv.Role : (nv.VaiTroPhuTrach ?? "Staff"),
+                    Status = nv.TrangThai
             }));
         }
 
         var khachHangs = await _khachHangRepository.GetAllAsync();
         if (khachHangs != null)
         {
-            users.AddRange(khachHangs.Select(kh => new {
-                Id = kh.MaKhachHang,
-                FullName = kh.HoTenKh ?? "Chưa cập nhật",
-                Email = kh.Email,
-                Role = "User",
-                Status = kh.TrangThai
+            // LỌC: Ẩn đi các tài khoản cũ đã bị thuyên chuyển (migrated)
+            users.AddRange(khachHangs
+                .Where(kh => kh.Email != null && !kh.Email.Contains("_migrated"))
+                .Select(kh => new {
+                    Id = kh.MaKhachHang,
+                    FullName = kh.HoTenKh ?? "Chưa cập nhật",
+                    Email = kh.Email,
+                    Role = "User",
+                    Status = kh.TrangThai
             }));
         }
 
@@ -199,33 +213,125 @@ public class AuthService : IAuthService
         }
     }
 
+    // ========================================================================
+    // ĐÃ SỬA: XỬ LÝ CHUYỂN ĐỔI BẢNG CỰC KỲ MẠNH MẼ (KHÔNG SỢ LỖI NGẦM)
+    // ========================================================================
     public async Task UpdateUserAsync(string userId, UpdateUserDto dto)
     {
         if (string.IsNullOrWhiteSpace(userId)) 
             throw new AuthException("ID người dùng không hợp lệ.");
 
+        // 🚨 CHỐNG LỖI 1: Ép Frontend phải gửi đúng Role, nếu gửi bậy bạ sẽ báo thẳng ra Alert!
+        if (string.IsNullOrWhiteSpace(dto.Role))
+            throw new AuthException("Lỗi lập trình: Giao diện (Frontend) đang gửi thiếu thuộc tính 'Role' (hoặc sai chữ hoa/thường).");
+
+        string newRole = dto.Role.Trim();
+
         if (userId.StartsWith("KH"))
         {
-            var kh = await _khachHangRepository.GetByIdAsync(userId) 
-                   ?? throw new AuthException("Không tìm thấy khách hàng.");
+            var kh = await _khachHangRepository.GetByIdAsync(userId) ?? throw new AuthException("Không tìm thấy khách hàng.");
             
-            kh.HoTenKh = dto.FullName;
-            kh.Email = dto.Email;
-            kh.TrangThai = dto.Status;
+            if (newRole == "Admin" || newRole == "Staff")
+            {
+                if (await _nhanVienRepository.GetByEmailAsync(dto.Email) != null)
+                    throw new AuthException("Lỗi: Email này đã tồn tại trong danh sách Nhân viên, không thể thăng chức!");
+
+                // THĂNG CHỨC
+                var maNhanVien = "NV" + DateTime.UtcNow.Ticks.ToString()[^8..];
+                var newNhanVien = new NhanVien
+                {
+                    MaNhanVien = maNhanVien,
+                    Email = dto.Email,
+                    TenNv = dto.FullName,
+                    MatKhau = kh.MatKhau, 
+                    Role = newRole,
+                    VaiTroPhuTrach = newRole,
+                    TrangThai = dto.Status
+                };
+                await _nhanVienRepository.AddAsync(newNhanVien);
+                
+                // 🚨 CHỐNG LỖI 2: Xử lý vụ dính khóa Ngoại Hóa đơn
+                try 
+                {
+                    await _khachHangRepository.DeleteAsync(kh); 
+                }
+                catch 
+                {
+                    // Nếu dính Hóa Đơn cũ không Xóa được -> Khóa tài khoản và đổi Email để tránh trùng lặp
+                    kh.TrangThai = 0;
+                    kh.Email = kh.Email + "_migrated_" + DateTime.Now.Ticks; 
+                    await _khachHangRepository.UpdateAsync(kh);
+                }
+            }
+            else
+            {
+                kh.HoTenKh = dto.FullName;
+                kh.Email = dto.Email;
+                kh.TrangThai = dto.Status;
+                await _khachHangRepository.UpdateAsync(kh);
+            }
+        }
+        else // LÀ NHÂN VIÊN (NV)
+        {
+            var nv = await _nhanVienRepository.GetByIdAsync(userId) ?? throw new AuthException("Không tìm thấy nhân viên.");
             
+            if (newRole == "User")
+            {
+                if (await _khachHangRepository.GetByEmailAsync(dto.Email) != null)
+                    throw new AuthException("Lỗi: Email này đã tồn tại bên danh sách Khách hàng, không thể giáng chức!");
+
+                // GIÁNG CHỨC
+                var maKhachHang = "KH" + DateTime.UtcNow.Ticks.ToString()[^8..];
+                var newKhachHang = new KhachHang
+                {
+                    MaKhachHang = maKhachHang,
+                    TenDangNhap = dto.Email,
+                    Email = dto.Email,
+                    HoTenKh = dto.FullName,
+                    MatKhau = nv.MatKhau,
+                    TrangThai = dto.Status,
+                    NgayDk = DateTime.UtcNow
+                };
+                await _khachHangRepository.AddAsync(newKhachHang);
+                
+                try 
+                {
+                    await _nhanVienRepository.DeleteAsync(nv);
+                }
+                catch 
+                {
+                    // Tương tự, nếu không xóa được thì Vô hiệu hóa
+                    nv.TrangThai = 0;
+                    nv.Email = nv.Email + "_migrated_" + DateTime.Now.Ticks;
+                    await _nhanVienRepository.UpdateAsync(nv);
+                }
+            }
+            else
+            {
+                nv.TenNv = dto.FullName;
+                nv.Email = dto.Email;
+                nv.Role = newRole;
+                nv.VaiTroPhuTrach = newRole;
+                nv.TrangThai = dto.Status;
+                await _nhanVienRepository.UpdateAsync(nv);
+            }
+        }
+    }
+
+    public async Task ToggleUserStatusAsync(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) throw new AuthException("ID người dùng không hợp lệ.");
+
+        if (userId.StartsWith("KH"))
+        {
+            var kh = await _khachHangRepository.GetByIdAsync(userId) ?? throw new AuthException("Không tìm thấy khách hàng.");
+            kh.TrangThai = kh.TrangThai == 1 ? 0 : 1; 
             await _khachHangRepository.UpdateAsync(kh);
         }
         else
         {
-            var nv = await _nhanVienRepository.GetByIdAsync(userId) 
-                   ?? throw new AuthException("Không tìm thấy nhân viên.");
-            
-            nv.TenNv = dto.FullName;
-            nv.Email = dto.Email;
-            nv.Role = dto.Role;
-            nv.VaiTroPhuTrach = dto.Role;
-            nv.TrangThai = dto.Status;
-            
+            var nv = await _nhanVienRepository.GetByIdAsync(userId) ?? throw new AuthException("Không tìm thấy nhân viên.");
+            nv.TrangThai = nv.TrangThai == 1 ? 0 : 1; 
             await _nhanVienRepository.UpdateAsync(nv);
         }
     }

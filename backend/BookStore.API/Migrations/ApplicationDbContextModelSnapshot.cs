@@ -22,6 +22,37 @@ namespace BookStore.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("BookStore.API.Models.Entities.ActivityLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ActivityLogs");
+                });
+
             modelBuilder.Entity("BookStore.API.Models.Entities.ChiTietHoaDon", b =>
                 {
                     b.Property<int>("MaCtHd")
@@ -64,6 +95,48 @@ namespace BookStore.API.Migrations
                     b.ToTable("CHITIETHOADON");
                 });
 
+            modelBuilder.Entity("BookStore.API.Models.Entities.ChiTietPhieuNhap", b =>
+                {
+                    b.Property<int>("MaCtPn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("MACTPN");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaCtPn"));
+
+                    b.Property<decimal>("GiaNhap")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("GIANHAP");
+
+                    b.Property<string>("MaPhieuNhap")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("MAPHIEUNHAP");
+
+                    b.Property<string>("MaSach")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("MASACH");
+
+                    b.Property<int>("SoLuongNhap")
+                        .HasColumnType("int")
+                        .HasColumnName("SOLUONGNHAP");
+
+                    b.Property<decimal>("ThanhTien")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("THANHTIEN");
+
+                    b.HasKey("MaCtPn");
+
+                    b.HasIndex("MaPhieuNhap");
+
+                    b.HasIndex("MaSach");
+
+                    b.ToTable("CHITIETPHIEUNHAP");
+                });
+
             modelBuilder.Entity("BookStore.API.Models.Entities.DanhMuc", b =>
                 {
                     b.Property<string>("MaDanhMuc")
@@ -76,6 +149,16 @@ namespace BookStore.API.Migrations
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("MOTA");
 
+                    b.Property<string>("ParentId")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("PARENTID");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("SLUG");
+
                     b.Property<string>("TenDanhMuc")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -83,6 +166,8 @@ namespace BookStore.API.Migrations
                         .HasColumnName("TENDANHMUC");
 
                     b.HasKey("MaDanhMuc");
+
+                    b.HasIndex("ParentId");
 
                     b.ToTable("DANHMUC");
                 });
@@ -152,8 +237,18 @@ namespace BookStore.API.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("DIACHIGIAOHANG");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<string>("GhiChu")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("GHICHU");
+
                     b.Property<decimal>("GiamGia")
-                        .HasColumnType("decimal(5,2)")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("GIAMGIA");
 
                     b.Property<string>("MaKhachHang")
@@ -176,7 +271,7 @@ namespace BookStore.API.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("NGAYDATHANG");
 
-                    b.Property<DateTime?>("NgayGiaHang")
+                    b.Property<DateTime?>("NgayGiaoHang")
                         .HasColumnType("datetime2")
                         .HasColumnName("NGAYGIAHANG");
 
@@ -184,11 +279,23 @@ namespace BookStore.API.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("PHIVANCHUYEN");
 
+                    b.Property<string>("PhuongThucThanhToan")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PHUONGTHUCTHANHTOAN");
+
                     b.Property<string>("SoDienThoaiNhan")
                         .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("nvarchar(15)")
                         .HasColumnName("SODIENTHOAINHAN");
+
+                    b.Property<string>("TenNguoiNhan")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("TENNGUOINHAN");
 
                     b.Property<decimal>("TongTien")
                         .HasColumnType("decimal(18,2)")
@@ -243,12 +350,6 @@ namespace BookStore.API.Migrations
                     b.Property<DateTime>("NgayDk")
                         .HasColumnType("datetime2")
                         .HasColumnName("NGAYDK");
-
-                    b.Property<string>("ResetToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ResetTokenExpiry")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("SoDienThoai")
                         .HasMaxLength(15)
@@ -413,6 +514,42 @@ namespace BookStore.API.Migrations
                     b.ToTable("NHANVIEN");
                 });
 
+            modelBuilder.Entity("BookStore.API.Models.Entities.PhieuNhap", b =>
+                {
+                    b.Property<string>("MaPhieuNhap")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("MAPHIEUNHAP");
+
+                    b.Property<string>("MaNhaCungCap")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("MANHACUNGCAP");
+
+                    b.Property<string>("MaNhanVien")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("MANHANVIEN");
+
+                    b.Property<DateTime>("NgayNhap")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("NGAYNHAP");
+
+                    b.Property<decimal>("TongTien")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("TONGTIEN");
+
+                    b.HasKey("MaPhieuNhap");
+
+                    b.HasIndex("MaNhaCungCap");
+
+                    b.HasIndex("MaNhanVien");
+
+                    b.ToTable("PHIEUNHAP");
+                });
+
             modelBuilder.Entity("BookStore.API.Models.Entities.Sach", b =>
                 {
                     b.Property<string>("MaSach")
@@ -429,10 +566,29 @@ namespace BookStore.API.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("GIABAN");
 
+                    b.Property<int>("GiamGia")
+                        .HasColumnType("int")
+                        .HasColumnName("GIAMGIA");
+
+                    b.Property<string>("HinhThuc")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("HINHTHUC");
+
+                    b.Property<string>("KichThuoc")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("KICHTHUOC");
+
                     b.Property<string>("LoaiSach")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("LOAISACH");
+
+                    b.Property<string>("MaNhaCungCap")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("MANHACUNGCAP");
 
                     b.Property<int?>("NamXuatBan")
                         .HasColumnType("int")
@@ -442,6 +598,21 @@ namespace BookStore.API.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)")
                         .HasColumnName("NGONNGU");
+
+                    b.Property<string>("NguoiDich")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("NGUOIDICH");
+
+                    b.Property<string>("NhaCungCap")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("NHACUNGCAP");
+
+                    b.Property<string>("NhaXuatBan")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("NHAXUATBAN");
 
                     b.Property<string>("NoiDungDemo")
                         .HasMaxLength(2000)
@@ -467,6 +638,10 @@ namespace BookStore.API.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("TENSACH");
 
+                    b.Property<int?>("TrongLuong")
+                        .HasColumnType("int")
+                        .HasColumnName("TRONGLUONG");
+
                     b.HasKey("MaSach");
 
                     b.ToTable("SACH");
@@ -489,6 +664,33 @@ namespace BookStore.API.Migrations
                     b.Navigation("HoaDon");
 
                     b.Navigation("Sach");
+                });
+
+            modelBuilder.Entity("BookStore.API.Models.Entities.ChiTietPhieuNhap", b =>
+                {
+                    b.HasOne("BookStore.API.Models.Entities.PhieuNhap", "PhieuNhap")
+                        .WithMany("ChiTietPhieuNhaps")
+                        .HasForeignKey("MaPhieuNhap")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BookStore.API.Models.Entities.Sach", "Sach")
+                        .WithMany()
+                        .HasForeignKey("MaSach")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PhieuNhap");
+
+                    b.Navigation("Sach");
+                });
+
+            modelBuilder.Entity("BookStore.API.Models.Entities.DanhMuc", b =>
+                {
+                    b.HasOne("BookStore.API.Models.Entities.DanhMuc", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("BookStore.API.Models.Entities.GioHang", b =>
@@ -554,6 +756,25 @@ namespace BookStore.API.Migrations
                     b.Navigation("NhanVien");
                 });
 
+            modelBuilder.Entity("BookStore.API.Models.Entities.PhieuNhap", b =>
+                {
+                    b.HasOne("BookStore.API.Models.Entities.NhaCungCap", "NhaCungCap")
+                        .WithMany()
+                        .HasForeignKey("MaNhaCungCap")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BookStore.API.Models.Entities.NhanVien", "NhanVien")
+                        .WithMany()
+                        .HasForeignKey("MaNhanVien")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NhaCungCap");
+
+                    b.Navigation("NhanVien");
+                });
+
             modelBuilder.Entity("BookStore.API.Models.Entities.DanhMuc", b =>
                 {
                     b.Navigation("Gom");
@@ -562,6 +783,11 @@ namespace BookStore.API.Migrations
             modelBuilder.Entity("BookStore.API.Models.Entities.HoaDon", b =>
                 {
                     b.Navigation("ChiTietHoaDons");
+                });
+
+            modelBuilder.Entity("BookStore.API.Models.Entities.PhieuNhap", b =>
+                {
+                    b.Navigation("ChiTietPhieuNhaps");
                 });
 
             modelBuilder.Entity("BookStore.API.Models.Entities.Sach", b =>

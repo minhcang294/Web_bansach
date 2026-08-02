@@ -5,7 +5,7 @@ import {
   FaSearch, FaFilter, FaEye, FaCheck, FaTimes, 
   FaHome, FaClipboardList, FaBox, FaUsers, FaSignOutAlt, FaBell,
   FaPrint, FaArrowRight, FaClipboardCheck, FaFileExcel, FaSync,
-  FaUserAlt, FaChartBar, FaCalendarAlt
+  FaUserAlt, FaChartBar, FaCalendarAlt, FaStore
 } from 'react-icons/fa';
 
 const API_BASE_URL = 'http://localhost:5000/api'; 
@@ -170,7 +170,7 @@ const StaffDashboard = () => {
       chartDataMap[key] = (chartDataMap[key] || 0) + o.rawTotal;
     }
   });
-  const chartData = Object.keys(chartDataMap).map(key => ({ label: key, value: chartDataMap[key] })).slice(-7); // lấy 7 ngày gần nhất
+  const chartData = Object.keys(chartDataMap).map(key => ({ label: key, value: chartDataMap[key] })).slice(-7);
   const maxChartValue = Math.max(...chartData.map(d => d.value), 100000);
 
   const displayOrders = orders.filter(o => 
@@ -259,7 +259,9 @@ const StaffDashboard = () => {
           <SidebarItem icon={<FaUsers />} label="Khách hàng" active={activeMenu === 'customers'} onClick={() => setActiveMenu('customers')} />
         </nav>
 
-        <div style={{ padding: '20px', borderTop: '1px solid #334155' }}>
+        {/* NÚT VỀ TRANG CHỦ & ĐĂNG XUẤT */}
+        <div style={{ padding: '15px 20px', borderTop: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <SidebarItem icon={<FaStore />} label="Về trang chủ" color="#38bdf8" onClick={() => navigate('/')} />
           <SidebarItem icon={<FaSignOutAlt />} label="Đăng xuất" color="#ef4444" onClick={handleLogout} />
         </div>
       </div>
@@ -312,16 +314,32 @@ const StaffDashboard = () => {
                 <StatCard icon={<FaExclamationTriangle />} title="Sách Sắp Hết Kho" value={stats.lowStockBooks} color="#dc2626" bg="#fee2e2" />
               </div>
 
-              {/* BỐ CỤC 2 CỘT: ĐƠN HÀNG & KHO HÀNG (NÚT ĐÃ ĐƯỢC ĐẨY SÁT GÓC PHẢI) */}
+              {/* BỐ CỤC 2 CỘT: ĐƠN HÀNG & KHO HÀNG */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '25px' }}>
                 
                 {/* Khung 1: Đơn hàng mới nhất */}
                 <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', width: '100%' }}>
+                  
+                  {/* SỬ DỤNG CSS GRID ĐỂ KHÓA CHẶT NÚT BẤM SÁT GÓC PHẢI */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', marginBottom: '18px', width: '100%' }}>
                     <h3 style={{ margin: 0, fontSize: '16px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
                       <FaClipboardList color="#0284c7" /> Đơn hàng mới nhất
                     </h3>
-                    <button onClick={() => setActiveMenu('orders')} style={{ border: 'none', background: 'none', color: '#0284c7', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Xem tất cả &rarr;</button>
+                    <button 
+                      onClick={() => setActiveMenu('orders')} 
+                      style={{
+                        border: 'none',
+                        background: 'none',
+                        color: '#0284c7',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        whiteSpace: 'nowrap',
+                        padding: '2px 0',
+                        transition: '0.2s'
+                      }}>
+                      Xem tất cả →
+                    </button>
                   </div>
                   
                   <div style={{ flex: 1, overflowX: 'auto' }}>
@@ -355,11 +373,27 @@ const StaffDashboard = () => {
 
                 {/* Khung 2: Cảnh báo sách sắp hết kho */}
                 <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', width: '100%' }}>
+                  
+                  {/* SỬ DỤNG CSS GRID ĐỂ KHÓA CHẶT NÚT BẤM SÁT GÓC PHẢI */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', marginBottom: '18px', width: '100%' }}>
                     <h3 style={{ margin: 0, fontSize: '16px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
                       <FaExclamationTriangle color="#dc2626" /> Sách sắp hết kho (&lt;5 cuốn)
                     </h3>
-                    <button onClick={() => setActiveMenu('inventory')} style={{ border: 'none', background: 'none', color: '#0284c7', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Kho hàng &rarr;</button>
+                    <button 
+                      onClick={() => setActiveMenu('inventory')} 
+                      style={{
+                        border: 'none',
+                        background: 'none',
+                        color: '#0284c7',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        whiteSpace: 'nowrap',
+                        padding: '2px 0',
+                        transition: '0.2s'
+                      }}>
+                      Kho hàng →
+                    </button>
                   </div>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '250px', overflowY: 'auto' }}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { bookApi } from "../api/bookApi.js"; 
 
@@ -81,10 +81,11 @@ export default function SearchPage() {
             }}>
               <Link to={`/books/${book.id || book.maSach}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <img 
-                  // Ưu tiên imageUrl (Từ BookDto trả về) hoặc hinhAnh
-                  src={book.imageUrl || book.hinhAnh || "https://via.placeholder.com/220x300?text=No+Image"} 
+                  // 👉 ĐÃ SỬA: Thay thế via.placeholder bằng ảnh cục bộ /default-book.png
+                  src={book.imageUrl || book.hinhAnh || "/default-book.png"} 
                   alt={book.title || book.tenSach} 
                   style={{ width: '100%', height: '240px', objectFit: 'cover', borderRadius: '4px' }} 
+                  onError={(e) => { e.target.onerror = null; e.target.src = "/default-book.png"; }}
                 />
                 <h3 style={{ 
                   fontSize: '16px', 

@@ -9,8 +9,12 @@ import {
   FaChartBar, 
   FaSignOutAlt, 
   FaHome,
-  FaWarehouse // Đã thêm icon kho hàng cho Quản lý Nhập kho
+  FaWarehouse 
 } from 'react-icons/fa';
+
+// NHÚNG COMPONENT CHUÔNG THÔNG BÁO VÀO ĐÂY
+// (Lưu ý: Bạn nhớ kiểm tra lại đường dẫn './NotificationBell' cho khớp với thư mục thực tế của bạn nhé)
+import NotificationBell from './NotificationBell'; 
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -111,7 +115,11 @@ export default function AdminLayout() {
             </Link>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}> {/* Tăng gap lên 20px cho rộng rãi */}
+            
+            {/* COMPONENT CHUÔNG ĐƯỢC CHÈN VÀO ĐÂY */}
+            <NotificationBell />
+
             <span style={{ fontSize: '14px', color: '#333', fontWeight: '500', whiteSpace: 'nowrap' }}>
               Xin chào, <b>Quản Trị Viên</b>
             </span>

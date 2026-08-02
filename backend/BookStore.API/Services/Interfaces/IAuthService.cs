@@ -18,9 +18,12 @@ public interface IAuthService
     Task DeleteUserAsync(string userId);
     Task UpdateUserAsync(string userId, UpdateUserDto dto);
 
-    // 👇 BỔ SUNG 2 DÒNG NÀY ĐỂ HẾT LỖI ĐỎ Ở CONTROLLER
+    // Hỗ trợ quên mật khẩu
     Task<bool> EmailExistsAsync(string email);
     Task<bool> ResetPasswordAsync(string email, string newPassword);
+
+    // 👇 BỔ SUNG DÒNG NÀY ĐỂ HẾT LỖI ĐỎ NÚT KHÓA/MỞ KHÓA TÀI KHOẢN
+    Task ToggleUserStatusAsync(string userId);
 }
 
 // Class Exception để xử lý lỗi nghiệp vụ

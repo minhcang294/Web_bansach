@@ -8,7 +8,10 @@ export default function BookCard({ book }) {
   // Hỗ trợ đọc dữ liệu linh hoạt (kể cả khi API trả về MASACH hay id)
   const id = book.MASACH || book.id;
   const title = book.TENSACH || book.title;
-  const image = book.ANHSACH || book.imageUrl || "https://via.placeholder.com/200x300?text=Chua+co+anh";
+  
+  // 👉 ĐÃ SỬA: Thay thế via.placeholder bằng ảnh cục bộ /default-book.png
+  const image = book.ANHSACH || book.imageUrl || "/default-book.png";
+  
   const price = book.GIABAN || book.price || 0;
   
   // Lấy ra số lượng tồn kho (quét nhiều trường hợp tên biến từ backend C#)
@@ -33,7 +36,8 @@ export default function BookCard({ book }) {
           src={image}
           alt={title}
           className="book-image"
-          onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/200x300?text=Loi+Anh" }}
+          // 👉 ĐÃ SỬA: Nếu ảnh thật lỗi hoặc không tồn tại, tự động chuyển về ảnh cục bộ
+          onError={(e) => { e.target.onerror = null; e.target.src = "/default-book.png"; }}
         />
       </div>
 

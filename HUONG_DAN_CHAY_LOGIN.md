@@ -27,3 +27,10 @@ netstat -ano | findstr :5000
 D:\clone
 cd D:\clone
 git clone https://github.com/minhcang294/Web_bansach.git
+
+LỊCH SỬ THAO TÁC
+Sau đó, mở Terminal (cửa sổ dòng lệnh) ở thư mục Backend và chạy 2 lệnh quen thuộc để cập nhật Database:
+cd backend/BookStore.API
+dotnet ef migrations add AddActivityLogTable
+
+dotnet ef database update

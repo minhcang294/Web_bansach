@@ -1,5 +1,6 @@
 using BookStore.API.Models.DTOs.Book;
 using BookStore.API.Services.Interfaces;
+using BookStore.API.Repositories.Interfaces; // Tiêm thêm interface của Log
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,14 @@ namespace BookStore.API.Controllers;
 public class BooksController : ControllerBase
 {
     private readonly IBookService _bookService;
-    public BooksController(IBookService bookService) => _bookService = bookService;
+    private readonly IActivityLogRepository _activityLogRepo; // Khai báo bộ ghi log
+
+    // Đưa bộ ghi log vào Constructor để sử dụng
+    public BooksController(IBookService bookService, IActivityLogRepository activityLogRepo) 
+    {
+        _bookService = bookService;
+        _activityLogRepo = activityLogRepo;
+    }
 
     /// <summary>Danh sách sách - tìm kiếm, lọc theo danh mục, phân trang. Công khai.</summary>
     [HttpGet]
@@ -32,14 +40,10 @@ public class BooksController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(keyword))
         {
-            // Trả về trực tiếp một mảng rỗng để React không bị lỗi
             return Ok(new List<object>()); 
         }
 
-        // Gọi logic tìm kiếm từ Service
         var result = await _bookService.SearchAsync(keyword, null, 1, 50);
-        
-        // QUAN TRỌNG: Chỉ trả về danh sách Items (mảng) để Frontend map được
         return Ok(result.Items);
     }
 
@@ -58,7 +62,19 @@ public class BooksController : ControllerBase
     public async Task<IActionResult> Create([FromBody] BookCreateDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+        
         var created = await _bookService.CreateAsync(dto);
+
+        // ---> BẮT ĐẦU GHI LOG: THÊM SÁCH <---
+        // Lấy tên Admin đang đăng nhập từ Token, nếu không có thì để mặc định là "Admin"
+        var userName = User.Identity?.Name ?? "Admin"; 
+        await _activityLogRepo.LogActionAsync(
+            userId: userName,
+            action: "Thêm mới",
+            entityType: "Sách",
+           details: $"Đã thêm sách mới: {dto.Title} (Mã sách: {created.Id})"
+        );
+
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
@@ -68,8 +84,20 @@ public class BooksController : ControllerBase
     public async Task<IActionResult> Update(string id, [FromBody] BookUpdateDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+        
         var updated = await _bookService.UpdateAsync(id, dto);
-        return updated is null ? NotFound(new { message = "Không tìm thấy sách." }) : Ok(updated);
+        if (updated is null) return NotFound(new { message = "Không tìm thấy sách." });
+
+        // ---> BẮT ĐẦU GHI LOG: SỬA SÁCH <---
+        var userName = User.Identity?.Name ?? "Admin";
+        await _activityLogRepo.LogActionAsync(
+            userId: userName,
+            action: "Cập nhật",
+            entityType: "Sách",
+            details: $"Đã cập nhật thông tin cuốn sách có mã: {id}"
+        );
+
+        return Ok(updated);
     }
 
     /// <summary>Chỉ Admin được xóa sách.</summary>
@@ -78,6 +106,17 @@ public class BooksController : ControllerBase
     public async Task<IActionResult> Delete(string id)
     {
         var deleted = await _bookService.DeleteAsync(id);
-        return deleted ? NoContent() : NotFound(new { message = "Không tìm thấy sách." });
+        if (!deleted) return NotFound(new { message = "Không tìm thấy sách." });
+
+        // ---> BẮT ĐẦU GHI LOG: XÓA SÁCH <---
+        var userName = User.Identity?.Name ?? "Admin";
+        await _activityLogRepo.LogActionAsync(
+            userId: userName,
+            action: "Xóa",
+            entityType: "Sách",
+            details: $"Đã xóa cuốn sách có mã: {id}"
+        );
+
+        return NoContent();
     }
 }

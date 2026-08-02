@@ -79,16 +79,17 @@ export default function BookDetailPage() {
             {/* Khối Ảnh bìa */}
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
               <img 
-                src={book.imageUrl || book.anhSach || 'https://via.placeholder.com/300x420?text=No+Image'} 
+                src={book.imageUrl || book.anhSach || '/default-book.png'} 
                 alt={book.title || book.tenSach} 
                 style={{ width: "100%", maxHeight: "420px", borderRadius: 8, objectFit: "contain" }} 
+                onError={(e) => { e.target.onerror = null; e.target.src = "/default-book.png"; }}
               />
             </div>
 
             {/* Khối Số lượng & Nút bấm */}
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
               
-              {/* PHẦN SỐ LƯỢNG: Đã tinh chỉnh lại giống hệt mẫu ảnh */}
+              {/* PHẦN SỐ LƯỢNG */}
               <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "20px" }}>
                 <span style={{ fontWeight: '600', color: '#333', fontSize: '15px' }}>Số lượng:</span>
                 
@@ -258,7 +259,7 @@ export default function BookDetailPage() {
                     <td style={{ padding: '10px', color: '#333' }}>{book.weight || book.trongLuong || 'Đang cập nhật'}</td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #f2f2f2' }}>
-                    <td style={{ padding: '10px', color: '#777', backgroundColor: '#fafafa' }}>Kích Thước Bao Bì</td>
+                    <td style={{ padding: '10px', color: '#777', backgroundColor: 'fafafa' }}>Kích Thước Bao Bì</td>
                     <td style={{ padding: '10px', color: '#333' }}>{book.dimensions || book.kichThuoc || 'Đang cập nhật'}</td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #f2f2f2' }}>
