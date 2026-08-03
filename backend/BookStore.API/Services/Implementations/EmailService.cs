@@ -18,17 +18,25 @@ public class EmailService : IEmailService
     public async Task SendEmailAsync(string to, string subject, string htmlString)
     {
         var email = new MimeMessage();
+        
+        // ĐÃ THÊM DẤU ! ở SenderEmail để fix warning
         email.From.Add(new MailboxAddress(
             _config["EmailSettings:SenderName"], 
-            _config["EmailSettings:SenderEmail"]
+            _config["EmailSettings:SenderEmail"]! 
         ));
+        
         email.To.Add(MailboxAddress.Parse(to));
         email.Subject = subject;
         email.Body = new TextPart(TextFormat.Html) { Text = htmlString };
 
         using var smtp = new SmtpClient();
-        await smtp.ConnectAsync(_config["EmailSettings:SmtpServer"], int.Parse(_config["EmailSettings:SmtpPort"]!), SecureSocketOptions.StartTls);
-        await smtp.AuthenticateAsync(_config["EmailSettings:SenderEmail"], _config["EmailSettings:SenderPassword"]);
+        
+        // ĐÃ THÊM DẤU ! ở SmtpServer để fix warning
+        await smtp.ConnectAsync(_config["EmailSettings:SmtpServer"]!, int.Parse(_config["EmailSettings:SmtpPort"]!), SecureSocketOptions.StartTls);
+        
+        // ĐÃ THÊM DẤU ! ở SenderEmail và SenderPassword để fix warning
+        await smtp.AuthenticateAsync(_config["EmailSettings:SenderEmail"]!, _config["EmailSettings:SenderPassword"]!);
+        
         await smtp.SendAsync(email);
         await smtp.DisconnectAsync(true);
     }

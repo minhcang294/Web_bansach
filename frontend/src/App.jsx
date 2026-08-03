@@ -17,6 +17,7 @@ import RegisterPage from "./page/RegisterPage";
 import OrderHistoryPage from "./page/OrderHistoryPage";
 import OrderDetailPage from "./page/OrderDetailPage";
 import ForgotPassword from './page/ForgotPassword';
+import ResetPassword from './page/ResetPassword'; // 🌟 ĐÃ THÊM: Import trang Đặt lại mật khẩu
 import SearchPage from "./page/SearchPage"; 
 import AboutPage from "./page/AboutPage";
 
@@ -24,6 +25,7 @@ import AboutPage from "./page/AboutPage";
 import Dashboard from "./page/Dashboard";
 import BookManagement from "./page/BookManagement";
 import CategoryManagement from "./page/CategoryManagement"; 
+import SupplierManagement from "./page/SupplierManagement";
 import OrderManagement from "./page/OrderManagement";
 import UserManagement from "./page/UserManagement"; 
 import ReportsPage from "./page/ReportsPage"; 
@@ -53,11 +55,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 const AppLayout = () => {
   const { pathname } = useLocation();
   
-  // ĐÃ SỬA: Thêm điều kiện || pathname.startsWith("/staff") để ẩn Header/Footer
+  // 🌟 ĐÃ THÊM: /reset-password vào danh sách ẩn Header/Footer
   const hideLayout = 
     pathname === "/login" || 
     pathname === "/register" || 
     pathname === "/forgot-password" || 
+    pathname === "/reset-password" || 
     pathname.startsWith("/admin") || 
     pathname.startsWith("/staff");
 
@@ -74,6 +77,7 @@ const AppLayout = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} /> {/* 🌟 ĐÃ THÊM: Khai báo Route */}
           <Route path="/search" element={<SearchPage />} />
           <Route path="/about" element={<AboutPage />} />
 
@@ -105,6 +109,7 @@ const AppLayout = () => {
             <Route index element={<Dashboard />} />
             <Route path="books" element={<BookManagement />} />
             <Route path="categories" element={<CategoryManagement />} /> 
+            <Route path="suppliers" element={<SupplierManagement />} />
             <Route path="imports" element={<ImportManagement />} />
             <Route path="orders" element={<OrderManagement />} /> 
             <Route path="users" element={<UserManagement />} />

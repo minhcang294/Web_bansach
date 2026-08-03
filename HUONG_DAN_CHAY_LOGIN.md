@@ -11,7 +11,6 @@ Gõ lệnh để vào thư mục frontend:
 cd frontend
 npm install
 Chạy lệnh khởi động:
-
 npm run dev
 
  SWAGGER

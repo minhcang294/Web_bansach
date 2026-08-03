@@ -66,7 +66,9 @@ const BookManagement = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/suppliers');
+      const response = await fetch('http://localhost:5000/api/NhaCungCap', {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
       if (response.ok) {
         const data = await response.json();
         setSuppliers(Array.isArray(data) ? data : []);
@@ -369,7 +371,8 @@ const BookManagement = () => {
                     <option value="">-- Chọn nhà cung cấp từ kho --</option>
                     {suppliers.map(sup => (
                       <option key={sup.maNhaCungCap} value={sup.maNhaCungCap}>
-                        {sup.tenNhaCungCap}
+                        {/* 🌟 ĐÃ SỬA: Hiển thị thêm mã nhà cung cấp */}
+                        {sup.tenNhaCungCap} - {sup.maNhaCungCap}
                       </option>
                     ))}
                   </select>

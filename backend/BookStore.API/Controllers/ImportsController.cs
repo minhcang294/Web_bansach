@@ -1,4 +1,5 @@
 using BookStore.API.Data;
+using BookStore.API.Models;
 using BookStore.API.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

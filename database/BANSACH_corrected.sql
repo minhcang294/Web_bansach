@@ -1,5 +1,5 @@
 /*================================================================*/
-/* 0. KIỂM TRA VÀ TẠO DATABASE (NẾU CHƯA CÓ)                       */
+/* 0. KIỂM TRA VÀ TẠO DATABASE (NẾU CHƯA CÓ)                      */
 /*================================================================*/
 IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'BANSACH')
 BEGIN
@@ -11,15 +11,15 @@ USE BANSACH;
 GO
 
 /*================================================================*/
-/* 1. DỌN DẸP BẢNG CŨ (XÓA BẢNG CON TRƯỚC, BẢNG CHA SAU)           */
+/* 1. DỌN DẸP BẢNG CŨ (XÓA BẢNG CON TRƯỚC, BẢNG CHA SAU)          */
 /*================================================================*/
 IF OBJECT_ID('CHITIETHOADON', 'U') IS NOT NULL DROP TABLE CHITIETHOADON;
-IF OBJECT_ID('GIOHANG', 'U') IS NOT NULL DROP TABLE GIOHANG;
 IF OBJECT_ID('HOADON', 'U') IS NOT NULL DROP TABLE HOADON;
+IF OBJECT_ID('GIOHANG', 'U') IS NOT NULL DROP TABLE GIOHANG;
 IF OBJECT_ID('CHITIETPHIEUNHAP', 'U') IS NOT NULL DROP TABLE CHITIETPHIEUNHAP;
 IF OBJECT_ID('PHIEUNHAP', 'U') IS NOT NULL DROP TABLE PHIEUNHAP;
-IF OBJECT_ID('GOM', 'U') IS NOT NULL DROP TABLE GOM;
 IF OBJECT_ID('SACH_NHACUNGCAP', 'U') IS NOT NULL DROP TABLE SACH_NHACUNGCAP;
+IF OBJECT_ID('GOM', 'U') IS NOT NULL DROP TABLE GOM;
 IF OBJECT_ID('SACH', 'U') IS NOT NULL DROP TABLE SACH;
 IF OBJECT_ID('DANHMUC', 'U') IS NOT NULL DROP TABLE DANHMUC;
 IF OBJECT_ID('NHACUNGCAP', 'U') IS NOT NULL DROP TABLE NHACUNGCAP;
@@ -29,10 +29,11 @@ IF OBJECT_ID('NHANVIEN', 'U') IS NOT NULL DROP TABLE NHANVIEN;
 GO
 
 /*================================================================*/
-/* 2. TẠO BẢNG                                                     */
+/* 2. TẠO BẢNG CHUẨN HÓA                                          */
 /*================================================================*/
 
--- ----- DANHMUC: Danh mục sách (Đã tích hợp PARENTID phân cấp cha-con) -----
+-- ----- 2.1. BẢNG KHÔNG PHỤ THUỘC (BẢNG CHA) -----
+
 CREATE TABLE DANHMUC (
     MADANHMUC   varchar(20)     NOT NULL PRIMARY KEY,
     TENDANHMUC  nvarchar(100)   NOT NULL,
@@ -43,7 +44,59 @@ CREATE TABLE DANHMUC (
 );
 GO
 
--- ----- SACH: Thông tin sách -----
+-- ĐÃ BỔ SUNG: 3 cột liên hệ cho Nhà cung cấp
+CREATE TABLE NHACUNGCAP (
+    MANHACUNGCAP    varchar(30)     NOT NULL PRIMARY KEY,
+    TENNHACUNGCAP   nvarchar(150)   NOT NULL,
+    MOTA            nvarchar(255)   NULL,
+    SODIENTHOAI     varchar(15)     NULL,
+    EMAIL           varchar(100)    NULL,
+    DIACHI          nvarchar(200)   NULL
+);
+GO
+
+CREATE TABLE KHUYENMAI (
+    MAKHUYENMAI     varchar(20)     NOT NULL PRIMARY KEY,
+    MAGIAMGIA       varchar(20)     NULL,
+    MUCGIAM         decimal(5,2)    NULL,
+    NGAYBATDAU      datetime        NULL,
+    NGAYKETTHUC     datetime        NULL,
+    LAGIVEAWAY      bit             NOT NULL DEFAULT 0
+);
+GO
+
+CREATE TABLE KHACHHANG (
+    MAKHACHHANG     varchar(20)     NOT NULL PRIMARY KEY,
+    TENDANGNHAP     varchar(50)     NOT NULL,
+    MATKHAU         nvarchar(200)   NOT NULL,
+    HOTENKH         nvarchar(100)   NULL,
+    EMAIL           nvarchar(100)   NOT NULL UNIQUE,
+    SODIENTHOAI     varchar(15)     NULL,
+    DIACHIKH        nvarchar(200)   NULL,
+    NGAYDK          datetime        NOT NULL DEFAULT GETDATE(),
+    TRANGTHAI       int             NOT NULL DEFAULT 1
+);
+GO
+
+CREATE TABLE NHANVIEN (
+    MANHANVIEN          varchar(20)     NOT NULL PRIMARY KEY,
+    TENDANGNHAP         nvarchar(50)    NOT NULL,
+    MATKHAU             nvarchar(200)   NOT NULL,
+    TENNV               nvarchar(100)   NULL,
+    NGAYSINH            date            NULL,
+    GIOITINH            nvarchar(10)    NULL,
+    EMAIL               nvarchar(100)   NOT NULL UNIQUE,
+    SODT                nvarchar(15)    NULL,
+    DIACHINV            nvarchar(200)   NULL,
+    VAITROPHUTRACH      nvarchar(30)    NOT NULL DEFAULT N'Staff',
+    ROLE                nvarchar(20)    NOT NULL DEFAULT N'Staff',
+    TRANGTHAILAMVIEC    nvarchar(30)    NULL,
+    TRANGTHAI           int             NOT NULL DEFAULT 1
+);
+GO
+
+-- ----- 2.2. BẢNG PHỤ THUỘC 1 CẤP -----
+
 CREATE TABLE SACH (
     MASACH          varchar(20)     NOT NULL PRIMARY KEY,
     TENSACH         nvarchar(200)   NOT NULL,
@@ -67,67 +120,6 @@ CREATE TABLE SACH (
 );
 GO
 
--- ----- GOM: Quan hệ n-n Sách <-> Danh mục -----
-CREATE TABLE GOM (
-    MASACH      varchar(20) NOT NULL,
-    MADANHMUC   varchar(20) NOT NULL,
-    CONSTRAINT PK_GOM PRIMARY KEY (MASACH, MADANHMUC),
-    CONSTRAINT FK_GOM_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH),
-    CONSTRAINT FK_GOM_DANHMUC FOREIGN KEY (MADANHMUC) REFERENCES DANHMUC(MADANHMUC)
-);
-GO
-
--- ----- NHACUNGCAP: Nhà cung cấp -----
-CREATE TABLE NHACUNGCAP (
-    MANHACUNGCAP    varchar(30)     NOT NULL PRIMARY KEY,
-    TENNHACUNGCAP   nvarchar(150)   NOT NULL,
-    MOTA            nvarchar(255)   NULL
-);
-GO
-
--- ----- SACH_NHACUNGCAP: Quan hệ n-n Sách <-> Nhà cung cấp -----
-CREATE TABLE SACH_NHACUNGCAP (
-    MANHACUNGCAP    varchar(30) NOT NULL,
-    MASACH          varchar(20) NOT NULL,
-    CONSTRAINT PK_SACH_NHACUNGCAP PRIMARY KEY (MANHACUNGCAP, MASACH),
-    CONSTRAINT FK_SNC_NHACUNGCAP FOREIGN KEY (MANHACUNGCAP) REFERENCES NHACUNGCAP(MANHACUNGCAP),
-    CONSTRAINT FK_SNC_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH)
-);
-GO
-
--- ----- KHACHHANG: Tài khoản khách hàng -----
-CREATE TABLE KHACHHANG (
-    MAKHACHHANG     varchar(20)     NOT NULL PRIMARY KEY,
-    TENDANGNHAP     varchar(50)     NOT NULL,
-    MATKHAU         nvarchar(200)   NOT NULL,
-    HOTENKH         nvarchar(100)   NULL,
-    EMAIL           nvarchar(100)   NOT NULL UNIQUE,
-    SODIENTHOAI     varchar(15)     NULL,
-    DIACHIKH        nvarchar(200)   NULL,
-    NGAYDK          datetime        NOT NULL DEFAULT GETDATE(),
-    TRANGTHAI       int             NOT NULL DEFAULT 1
-);
-GO
-
--- ----- NHANVIEN: Tài khoản nhân viên/admin -----
-CREATE TABLE NHANVIEN (
-    MANHANVIEN           varchar(20)     NOT NULL PRIMARY KEY,
-    TENDANGNHAP          nvarchar(50)    NOT NULL,
-    MATKHAU              nvarchar(200)   NOT NULL,
-    TENNV                nvarchar(100)   NULL,
-    NGAYSINH             date            NULL,
-    GIOITINH             nvarchar(10)    NULL,
-    EMAIL                nvarchar(100)   NOT NULL UNIQUE,
-    SODT                 nvarchar(15)    NULL,
-    DIACHINV             nvarchar(200)   NULL,
-    VAITROPHUTRACH       nvarchar(30)    NOT NULL DEFAULT N'Staff',
-    ROLE                 nvarchar(20)    NOT NULL DEFAULT N'Staff',
-    TRANGTHAILAMVIEC     nvarchar(30)    NULL,
-    TRANGTHAI            int             NOT NULL DEFAULT 1
-);
-GO
-
--- ----- PHIEUNHAP: Quản lý nhập kho sách -----
 CREATE TABLE PHIEUNHAP (
     MAPHIEUNHAP     varchar(20)     NOT NULL PRIMARY KEY,
     MANHACUNGCAP    varchar(30)     NOT NULL,
@@ -139,43 +131,6 @@ CREATE TABLE PHIEUNHAP (
 );
 GO
 
--- ----- CHITIETPHIEUNHAP: Chi tiết sách nhập kho -----
-CREATE TABLE CHITIETPHIEUNHAP (
-    MACTPN          int IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    MAPHIEUNHAP     varchar(20)     NOT NULL,
-    MASACH          varchar(20)     NOT NULL,
-    SOLUONGNHAP     int             NOT NULL,
-    GIANHAP         decimal(18,2)   NOT NULL,
-    THANHTIEN       decimal(18,2)   NOT NULL,
-    CONSTRAINT FK_CTPN_PHIEUNHAP FOREIGN KEY (MAPHIEUNHAP) REFERENCES PHIEUNHAP(MAPHIEUNHAP) ON DELETE CASCADE,
-    CONSTRAINT FK_CTPN_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH)
-);
-GO
-
--- ----- KHUYENMAI: Mã giảm giá / chương trình khuyến mãi -----
-CREATE TABLE KHUYENMAI (
-    MAKHUYENMAI     varchar(20)     NOT NULL PRIMARY KEY,
-    MAGIAMGIA       varchar(20)     NULL,
-    MUCGIAM         decimal(5,2)    NULL,
-    NGAYBATDAU      datetime        NULL,
-    NGAYKETTHUC     datetime        NULL,
-    LAGIVEAWAY      bit             NOT NULL DEFAULT 0
-);
-GO
-
--- ----- GIOHANG: Giỏ hàng của khách -----
-CREATE TABLE GIOHANG (
-    MAGIOHANG       int IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    MAKHACHHANG     varchar(20)     NOT NULL,
-    MASACH          varchar(20)     NOT NULL,
-    SOLUONG         int             NOT NULL DEFAULT 1,
-    CONSTRAINT UQ_GIOHANG_KH_SACH UNIQUE (MAKHACHHANG, MASACH),
-    CONSTRAINT FK_GIOHANG_KHACHHANG FOREIGN KEY (MAKHACHHANG) REFERENCES KHACHHANG(MAKHACHHANG),
-    CONSTRAINT FK_GIOHANG_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH)
-);
-GO
-
--- ----- HOADON: Đơn hàng -----
 CREATE TABLE HOADON (
     MAHOADON            varchar(20)     NOT NULL PRIMARY KEY,
     MANHANVIEN          varchar(20)     NULL,
@@ -183,13 +138,10 @@ CREATE TABLE HOADON (
     MAKHUYENMAI         varchar(20)     NULL,
     NGAYDATHANG         datetime        NOT NULL DEFAULT GETDATE(),
     NGAYGIAHANG         datetime        NULL,
-    
-    -- 🌟 CÁC CỘT MỚI BỔ SUNG TẠI ĐÂY 🌟
     TENNGUOINHAN        nvarchar(100)   NULL,
     EMAIL               nvarchar(100)   NULL,
     PHUONGTHUCTHANHTOAN nvarchar(50)    NOT NULL DEFAULT N'COD',
     GHICHU              nvarchar(500)   NULL,
-    
     DIACHIGIAOHANG      nvarchar(200)   NOT NULL,
     SODIENTHOAINHAN     varchar(15)     NOT NULL,
     TRANGTHAIGIAOHANG   nvarchar(30)    NOT NULL DEFAULT N'ChoXuLy',
@@ -202,7 +154,49 @@ CREATE TABLE HOADON (
 );
 GO
 
--- ----- CHITIETHOADON: Chi tiết từng sản phẩm trong đơn hàng -----
+-- ----- 2.3. BẢNG TRUNG GIAN & CHI TIẾT -----
+
+CREATE TABLE GOM (
+    MASACH      varchar(20) NOT NULL,
+    MADANHMUC   varchar(20) NOT NULL,
+    CONSTRAINT PK_GOM PRIMARY KEY (MASACH, MADANHMUC),
+    CONSTRAINT FK_GOM_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH),
+    CONSTRAINT FK_GOM_DANHMUC FOREIGN KEY (MADANHMUC) REFERENCES DANHMUC(MADANHMUC)
+);
+GO
+
+CREATE TABLE SACH_NHACUNGCAP (
+    MANHACUNGCAP    varchar(30) NOT NULL,
+    MASACH          varchar(20) NOT NULL,
+    CONSTRAINT PK_SACH_NHACUNGCAP PRIMARY KEY (MANHACUNGCAP, MASACH),
+    CONSTRAINT FK_SNC_NHACUNGCAP FOREIGN KEY (MANHACUNGCAP) REFERENCES NHACUNGCAP(MANHACUNGCAP),
+    CONSTRAINT FK_SNC_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH)
+);
+GO
+
+CREATE TABLE CHITIETPHIEUNHAP (
+    MACTPN          int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    MAPHIEUNHAP     varchar(20)     NOT NULL,
+    MASACH          varchar(20)     NOT NULL,
+    SOLUONGNHAP     int             NOT NULL,
+    GIANHAP         decimal(18,2)   NOT NULL,
+    THANHTIEN       decimal(18,2)   NOT NULL,
+    CONSTRAINT FK_CTPN_PHIEUNHAP FOREIGN KEY (MAPHIEUNHAP) REFERENCES PHIEUNHAP(MAPHIEUNHAP) ON DELETE CASCADE,
+    CONSTRAINT FK_CTPN_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH)
+);
+GO
+
+CREATE TABLE GIOHANG (
+    MAGIOHANG       int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    MAKHACHHANG     varchar(20)     NOT NULL,
+    MASACH          varchar(20)     NOT NULL,
+    SOLUONG         int             NOT NULL DEFAULT 1,
+    CONSTRAINT UQ_GIOHANG_KH_SACH UNIQUE (MAKHACHHANG, MASACH),
+    CONSTRAINT FK_GIOHANG_KHACHHANG FOREIGN KEY (MAKHACHHANG) REFERENCES KHACHHANG(MAKHACHHANG),
+    CONSTRAINT FK_GIOHANG_SACH FOREIGN KEY (MASACH) REFERENCES SACH(MASACH)
+);
+GO
+
 CREATE TABLE CHITIETHOADON (
     MACTHD      int IDENTITY(1,1) NOT NULL PRIMARY KEY,
     MAHOADON    varchar(20)     NOT NULL,
@@ -216,7 +210,7 @@ CREATE TABLE CHITIETHOADON (
 GO
 
 /*================================================================*/
-/* 3. INDEX CHO CÁC CỘT TÌM KIẾM/LỌC                              */
+/* 3. TẠO INDEX ĐỂ TĂNG TỐC ĐỘ TRUY VẤN                           */
 /*================================================================*/
 CREATE INDEX IX_SACH_TENSACH ON SACH(TENSACH);
 CREATE INDEX IX_GOM_MADANHMUC ON GOM(MADANHMUC);
@@ -228,7 +222,7 @@ CREATE INDEX IX_CTPN_MAPHIEUNHAP ON CHITIETPHIEUNHAP(MAPHIEUNHAP);
 GO
 
 /*================================================================*/
-/* 4. DỮ LIỆU MẪU                                                 */
+/* 4. CHÈN DỮ LIỆU MẪU (DUMMY DATA)                               */
 /*================================================================*/
 
 -- ----- Danh mục -----
@@ -262,11 +256,11 @@ INSERT INTO DANHMUC (MADANHMUC, TENDANHMUC, SLUG, MOTA, PARENTID) VALUES
 ('NN04', N'Tiếng Hàn', 'tieng-han', N'Tài liệu tiếng Hàn Quốc', 'NN');
 GO
 
--- ----- Nhà cung cấp -----
-INSERT INTO NHACUNGCAP (MANHACUNGCAP, TENNHACUNGCAP, MOTA) VALUES
-('NCC01', N'Công ty CP Sách First News', N'Chuyên phát hành sách văn học và kỹ năng sống'),
-('NCC02', N'NXB Kim Đồng', N'Nhà xuất bản đầu sách thiếu nhi, manga trong nước'),
-('NCC03', N'NXB Trẻ', N'Chuyên sách kinh tế, văn học');
+-- ĐÃ BỔ SUNG: Dữ liệu liên hệ mẫu cho Nhà cung cấp
+INSERT INTO NHACUNGCAP (MANHACUNGCAP, TENNHACUNGCAP, MOTA, SODIENTHOAI, EMAIL, DIACHI) VALUES
+('NCC01', N'Công ty CP Sách First News', N'Chuyên phát hành sách văn học và kỹ năng sống', '02838227979', 'info@firstnews.com.vn', N'11H Nguyễn Thị Minh Khai, Q1, TP.HCM'),
+('NCC02', N'NXB Kim Đồng', N'Nhà xuất bản đầu sách thiếu nhi, manga trong nước', '1900571595', 'cskh@nxbkimdong.com.vn', N'55 Quang Trung, Hai Bà Trưng, Hà Nội'),
+('NCC03', N'NXB Trẻ', N'Chuyên sách kinh tế, văn học', '02839316289', 'hopthu@nxbtre.com.vn', N'161B Lý Chính Thắng, Q3, TP.HCM');
 GO
 
 -- ----- Sách -----
@@ -292,7 +286,7 @@ GO
 
 -- ----- Tài khoản mẫu -----
 INSERT INTO NHANVIEN (MANHANVIEN, TENDANGNHAP, MATKHAU, TENNV, EMAIL, VAITROPHUTRACH, ROLE, TRANGTHAILAMVIEC, TRANGTHAI) VALUES
-('NV001', 'admin', '$2b$11$QLj8z3b7h5FS9dVcdyVYj.DkW0MmndWveQVkx8X5i19/idvI.dQcy', N'Quản Trị Viên', 'admin@bookstore.com', N'Quản trị hệ thống', 'Admin', N'DangLamViec', 1),
+('NV001', 'admin', '$2b$11$QLj8z3b7h5FS9dVcdyVYj.DkW0MmndWveQVkx8X5i19/idvI.dQcy', N'Quản Trị Viên', 'nm358338@gmail.com', N'Quản trị hệ thống', 'Admin', N'DangLamViec', 1),
 ('NV002', 'staff', '$2a$11$o2EZrqlCD9DvCoV8lsJhQOki5d5b3.FMxOttZ.ARWrmR1zO1iDj7i', N'Nhân Viên Bán Hàng', 'staff@bookstore.com', N'Bán hàng', 'Staff', N'DangLamViec', 1);
 GO
 
@@ -312,10 +306,11 @@ INSERT INTO CHITIETPHIEUNHAP (MAPHIEUNHAP, MASACH, SOLUONGNHAP, GIANHAP, THANHTI
 GO
 
 /*================================================================*/
-/* 5. KIỂM TRA DỮ LIỆU SAU KHI TẠO                               */
+/* 5. KIỂM TRA DỮ LIỆU SAU KHI TẠO                                */
 /*================================================================*/
+SELECT * FROM NHACUNGCAP;
 SELECT * FROM PHIEUNHAP;
 SELECT * FROM CHITIETPHIEUNHAP;
-SELECT * FROM HOADON
+SELECT * FROM HOADON;
 SELECT * FROM SACH;
 SELECT * FROM NHANVIEN;

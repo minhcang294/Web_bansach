@@ -9,7 +9,8 @@ import {
   FaChartBar, 
   FaSignOutAlt, 
   FaHome,
-  FaWarehouse 
+  FaWarehouse,
+  FaTruck // Đã thêm icon xe tải cho Nhà cung cấp
 } from 'react-icons/fa';
 
 // NHÚNG COMPONENT CHUÔNG THÔNG BÁO VÀO ĐÂY
@@ -75,6 +76,11 @@ export default function AdminLayout() {
             <FaListAlt /> Quản lý Danh mục
           </Link>
 
+          {/* ĐÃ THÊM MỤC: QUẢN LÝ NHÀ CUNG CẤP */}
+          <Link to="/admin/suppliers" style={linkStyle('/admin/suppliers')}>
+            <FaTruck /> Quản lý Nhà cung cấp
+          </Link>
+
           {/* MỤC MỚI: QUẢN LÝ NHẬP KHO */}
           <Link to="/admin/imports" style={linkStyle('/admin/imports')}>
             <FaWarehouse /> Quản lý Nhập kho
@@ -115,7 +121,7 @@ export default function AdminLayout() {
             </Link>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}> {/* Tăng gap lên 20px cho rộng rãi */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             
             {/* COMPONENT CHUÔNG ĐƯỢC CHÈN VÀO ĐÂY */}
             <NotificationBell />

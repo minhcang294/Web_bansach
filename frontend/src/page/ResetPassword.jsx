@@ -4,6 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const email = searchParams.get('email'); // 🌟 ĐÃ THÊM: Lấy email từ trên thanh URL xuống
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -13,7 +14,7 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!token) {
+    if (!token || !email) {
       setStatus('error');
       setMessage('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
       return;
@@ -40,13 +41,14 @@ const ResetPassword = () => {
     setStatus('loading');
 
     try {
-      // Gọi API Backend của bạn (thay đổi URL nếu cần)
+      // 🌟 ĐÃ SỬA: Đổi localhost thành IP của bạn để điện thoại có thể gọi được API
       const response = await fetch('http://localhost:5000/api/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token, newPassword })
+        // 🌟 ĐÃ SỬA: Gửi kèm cả email, token và newPassword xuống Backend
+        body: JSON.stringify({ email, token, newPassword })
       });
 
       if (response.ok) {
@@ -98,7 +100,7 @@ const ResetPassword = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            {!token && (
+            {(!token || !email) && (
               <div style={{ color: '#e74c3c', marginBottom: '20px', fontSize: '14px', padding: '10px', backgroundColor: '#fdedec', borderRadius: '4px' }}>
                 Liên kết không hợp lệ. Vui lòng kiểm tra lại email của bạn.
               </div>
@@ -113,7 +115,7 @@ const ResetPassword = () => {
                 placeholder="Nhập mật khẩu mới"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                disabled={status === 'loading' || !token}
+                disabled={status === 'loading' || !token || !email}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -134,7 +136,7 @@ const ResetPassword = () => {
                 placeholder="Nhập lại mật khẩu mới"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={status === 'loading' || !token}
+                disabled={status === 'loading' || !token || !email}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -154,17 +156,17 @@ const ResetPassword = () => {
 
             <button
               type="submit"
-              disabled={status === 'loading' || !token}
+              disabled={status === 'loading' || !token || !email}
               style={{
                 width: '100%',
                 padding: '12px',
-                backgroundColor: (status === 'loading' || !token) ? '#95a5a6' : '#e74c3c',
+                backgroundColor: (status === 'loading' || !token || !email) ? '#95a5a6' : '#e74c3c',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
                 fontSize: '16px',
                 fontWeight: 'bold',
-                cursor: (status === 'loading' || !token) ? 'not-allowed' : 'pointer',
+                cursor: (status === 'loading' || !token || !email) ? 'not-allowed' : 'pointer',
                 transition: '0.3s'
               }}
             >

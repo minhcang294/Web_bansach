@@ -28,8 +28,12 @@ public class AuthService : IAuthService
                await _nhanVienRepository.GetByEmailAsync(email) != null;
     }
 
+    // ========================================================================
+    // 🌟 ĐÃ BỔ SUNG HÀM RESET MẬT KHẨU VÀO ĐÂY 🌟
+    // ========================================================================
     public async Task<bool> ResetPasswordAsync(string email, string newPassword)
     {
+        // Bước 1: Tìm trong bảng Khách Hàng (User bình thường) trước
         var khachHang = await _khachHangRepository.GetByEmailAsync(email);
         if (khachHang != null)
         {
@@ -38,6 +42,7 @@ public class AuthService : IAuthService
             return true;
         }
 
+        // Bước 2: Nếu KHÔNG TÌM THẤY ở bảng Khách Hàng, thì tìm tiếp trong bảng Nhân Viên (Staff / Admin)
         var nhanVien = await _nhanVienRepository.GetByEmailAsync(email);
         if (nhanVien != null)
         {
@@ -45,6 +50,7 @@ public class AuthService : IAuthService
             await _nhanVienRepository.UpdateAsync(nhanVien);
             return true;
         }
+        
         return false;
     }
 
@@ -167,7 +173,6 @@ public class AuthService : IAuthService
         var nhanViens = await _nhanVienRepository.GetAllAsync();
         if (nhanViens != null)
         {
-            // LỌC: Ẩn đi các tài khoản cũ đã bị thuyên chuyển (migrated)
             users.AddRange(nhanViens
                 .Where(nv => nv.Email != null && !nv.Email.Contains("_migrated"))
                 .Select(nv => new {
@@ -182,7 +187,6 @@ public class AuthService : IAuthService
         var khachHangs = await _khachHangRepository.GetAllAsync();
         if (khachHangs != null)
         {
-            // LỌC: Ẩn đi các tài khoản cũ đã bị thuyên chuyển (migrated)
             users.AddRange(khachHangs
                 .Where(kh => kh.Email != null && !kh.Email.Contains("_migrated"))
                 .Select(kh => new {
@@ -213,15 +217,11 @@ public class AuthService : IAuthService
         }
     }
 
-    // ========================================================================
-    // ĐÃ SỬA: XỬ LÝ CHUYỂN ĐỔI BẢNG CỰC KỲ MẠNH MẼ (KHÔNG SỢ LỖI NGẦM)
-    // ========================================================================
     public async Task UpdateUserAsync(string userId, UpdateUserDto dto)
     {
         if (string.IsNullOrWhiteSpace(userId)) 
             throw new AuthException("ID người dùng không hợp lệ.");
 
-        // 🚨 CHỐNG LỖI 1: Ép Frontend phải gửi đúng Role, nếu gửi bậy bạ sẽ báo thẳng ra Alert!
         if (string.IsNullOrWhiteSpace(dto.Role))
             throw new AuthException("Lỗi lập trình: Giao diện (Frontend) đang gửi thiếu thuộc tính 'Role' (hoặc sai chữ hoa/thường).");
 
@@ -236,7 +236,6 @@ public class AuthService : IAuthService
                 if (await _nhanVienRepository.GetByEmailAsync(dto.Email) != null)
                     throw new AuthException("Lỗi: Email này đã tồn tại trong danh sách Nhân viên, không thể thăng chức!");
 
-                // THĂNG CHỨC
                 var maNhanVien = "NV" + DateTime.UtcNow.Ticks.ToString()[^8..];
                 var newNhanVien = new NhanVien
                 {
@@ -250,14 +249,12 @@ public class AuthService : IAuthService
                 };
                 await _nhanVienRepository.AddAsync(newNhanVien);
                 
-                // 🚨 CHỐNG LỖI 2: Xử lý vụ dính khóa Ngoại Hóa đơn
                 try 
                 {
                     await _khachHangRepository.DeleteAsync(kh); 
                 }
                 catch 
                 {
-                    // Nếu dính Hóa Đơn cũ không Xóa được -> Khóa tài khoản và đổi Email để tránh trùng lặp
                     kh.TrangThai = 0;
                     kh.Email = kh.Email + "_migrated_" + DateTime.Now.Ticks; 
                     await _khachHangRepository.UpdateAsync(kh);
@@ -271,7 +268,7 @@ public class AuthService : IAuthService
                 await _khachHangRepository.UpdateAsync(kh);
             }
         }
-        else // LÀ NHÂN VIÊN (NV)
+        else 
         {
             var nv = await _nhanVienRepository.GetByIdAsync(userId) ?? throw new AuthException("Không tìm thấy nhân viên.");
             
@@ -280,7 +277,6 @@ public class AuthService : IAuthService
                 if (await _khachHangRepository.GetByEmailAsync(dto.Email) != null)
                     throw new AuthException("Lỗi: Email này đã tồn tại bên danh sách Khách hàng, không thể giáng chức!");
 
-                // GIÁNG CHỨC
                 var maKhachHang = "KH" + DateTime.UtcNow.Ticks.ToString()[^8..];
                 var newKhachHang = new KhachHang
                 {
@@ -300,7 +296,6 @@ public class AuthService : IAuthService
                 }
                 catch 
                 {
-                    // Tương tự, nếu không xóa được thì Vô hiệu hóa
                     nv.TrangThai = 0;
                     nv.Email = nv.Email + "_migrated_" + DateTime.Now.Ticks;
                     await _nhanVienRepository.UpdateAsync(nv);

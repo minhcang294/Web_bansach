@@ -108,7 +108,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.RegisterAsync(dto);
-            return StatusCode(201, result); // Sửa lỗi 21 thành 201
+            return StatusCode(201, result); 
         }
         catch (AuthException ex)
         {
@@ -138,7 +138,10 @@ public class AuthController : ControllerBase
         }
         
         string resetToken = Guid.NewGuid().ToString(); 
-        string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&token={resetToken}";
+        
+        // Link gửi vào mail có IP để test trên điện thoại
+// Xóa dòng có số IP đi và thay bằng dòng này:
+string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&token={resetToken}";        
         string emailSubject = "Yêu cầu khôi phục mật khẩu - BookGalaxy";
         string emailBody = $@"
             <div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
@@ -162,6 +165,41 @@ public class AuthController : ControllerBase
         }
     }
 
+    // 🌟 ĐÃ THÊM HÀM NÀY VÀO ĐÚNG VỊ TRÍ 🌟
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
+    {
+        if (request == null || string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Token) || string.IsNullOrEmpty(request.NewPassword))
+        {
+            return BadRequest(new ApiErrorResponse("Dữ liệu không hợp lệ hoặc bị thiếu."));
+        }
+
+        try
+        {
+            bool isSuccess = await _authService.ResetPasswordAsync(request.Email, request.NewPassword);
+            
+            if (isSuccess)
+            {
+                return Ok(new { message = "Đặt lại mật khẩu thành công!" });
+            }
+            else
+            {
+                return BadRequest(new ApiErrorResponse("Không tìm thấy email này trong hệ thống."));
+            }
+        }
+        catch (AuthException ex)
+        {
+            return StatusCode(ex.StatusCode, new ApiErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi reset mật khẩu cho tài khoản: {Email}", request.Email);
+            return StatusCode(500, new ApiErrorResponse("Lỗi hệ thống khi cập nhật mật khẩu mới."));
+        }
+    }
+
 
     // ====================================================================
     // API QUẢN LÝ NGƯỜI DÙNG (YÊU CẦU QUYỀN ADMIN / STAFF)
@@ -174,7 +212,6 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAllUsers()
     {
-        // Trở về hàm GetAllUsersAsync() trả về object như Interface cũ của bạn
         var users = await _authService.GetAllUsersAsync();
         return Ok(users);
     }
@@ -237,14 +274,14 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreateUser([FromBody] RegisterDto dto) // Khôi phục lại RegisterDto cho chuẩn với IAuthService
+    public async Task<IActionResult> CreateUser([FromBody] RegisterDto dto) 
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         try
         {
             var result = await _authService.CreateUserByAdminAsync(dto);
-            return StatusCode(201, result); // Sửa lỗi số 21 thành 201
+            return StatusCode(201, result); 
         }
         catch (AuthException ex)
         {
@@ -257,7 +294,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPut("users/{id}/status")] // Chỉnh lại đường dẫn cho khớp Frontend (bỏ chữ toggle-)
+    [HttpPut("users/{id}/status")] 
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> ToggleUserStatus(string id)
     {
@@ -278,9 +315,19 @@ public class AuthController : ControllerBase
     }
 }
 
-// Class hỗ trợ trả về thông báo lỗi chuẩn
+// ====================================================================
+// CÁC LỚP BỔ TRỢ ĐƯỢC TÁCH RA NGOÀI (KHÔNG BỊ LỖI LỒNG NHAU)
+// ====================================================================
+
 public class ApiErrorResponse 
 {
     public string Message { get; set; }
     public ApiErrorResponse(string message) { Message = message; }
+}
+
+public class ResetPasswordDto
+{
+    public string Email { get; set; }
+    public string Token { get; set; }
+    public string NewPassword { get; set; }
 }
