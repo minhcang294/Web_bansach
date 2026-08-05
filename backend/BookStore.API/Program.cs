@@ -6,7 +6,7 @@ using BookStore.API.Repositories.Implementations;
 using BookStore.API.Services.Interfaces;
 using BookStore.API.Services.Implementations;
 using BookStore.API.Helpers; 
-using BookStore.API.Hubs; // 🟢 BỔ SUNG 1: Khai báo namespace chứa SignalR Hub
+using BookStore.API.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -36,7 +36,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSingleton<JwtTokenGenerator>();
 
-// 🟢 BỔ SUNG 2: Đăng ký dịch vụ SignalR cho hệ thống Real-time
+// Đăng ký dịch vụ SignalR cho hệ thống Real-time
 builder.Services.AddSignalR();
 
 // Cấu hình Controller và JSON để tránh lỗi vòng lặp (Object Cycle)
@@ -47,7 +47,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// 3. Cấu hình xác thực JWT & Sửa lỗi 403 bằng RoleClaimType = "role"
+// 3. Cấu hình xác thực JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("SecretKey missing in appsettings.json");
 
@@ -63,9 +63,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        
-        // Khớp tên khóa quyền "role" do Token Generator sinh ra
-        // RoleClaimType = "role" 
     };
 });
 
@@ -77,7 +74,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // Bắt buộc phải có để SignalR truyền Credential qua WebSocket
+              .AllowCredentials();
     });
 });
 
@@ -96,11 +93,19 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 6. Khởi tạo Database tự động khi chạy (nếu chưa có)
+// 6. 🌟 ĐÃ SỬA: Tự động Migrate để bổ sung các bảng còn thiếu (như ActivityLogs)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.EnsureCreated(); 
+    try 
+    {
+        // Lệnh này sẽ tự so sánh Code C# và SQL Server, nếu thiếu bảng nó sẽ tự tạo
+        db.Database.Migrate(); 
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[CẢNH BÁO MIGRATION]: {ex.Message}");
+    }
 }
 
 // Bật Swagger
@@ -109,17 +114,19 @@ app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BookStore A
 
 app.UseHttpsRedirection();
 
+// Cấp phép CORS khi tải ảnh tĩnh từ wwwroot
+app.UseCors("AllowAll"); 
+
 // Cho phép truy cập file tĩnh (hiển thị ảnh sách trong thư mục wwwroot)
 app.UseStaticFiles(); 
 
-// Thứ tự Middleware bắt buộc: CORS -> Authentication -> Authorization
-app.UseCors("AllowAll"); 
+// Thứ tự Middleware xác thực
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// 🟢 BỔ SUNG 3: Định tuyến đường dẫn kết nối SignalR Hub cho Client (ReactJS)
+// Định tuyến đường dẫn kết nối SignalR Hub cho Client (ReactJS)
 app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

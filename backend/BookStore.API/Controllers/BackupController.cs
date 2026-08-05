@@ -8,7 +8,7 @@ namespace BookStore.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")] // Chỉ Admin mới được quyền thao tác với cơ sở dữ liệu
+    [Authorize(Roles = "Admin")]
     public class BackupController : ControllerBase
     {
         private readonly string _connectionString;
@@ -18,8 +18,11 @@ namespace BookStore.API.Controllers
         public BackupController(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
-            _databaseName = "BookStoreDB"; // Tên Database của bạn trong SQL Server
-            _backupFolder = @"D:\Web_bansach_fullstack\Backups"; // Thư mục lưu trữ file .bak
+            
+            // 🔴 SỬA LỖI 1: Tên Database phải khớp 100% với tên trong SQL Server của bạn
+            _databaseName = "BANSACH"; 
+            
+            _backupFolder = @"D:\Web_bansach_fullstack\Backups"; 
 
             if (!Directory.Exists(_backupFolder))
             {
@@ -99,14 +102,14 @@ namespace BookStore.API.Controllers
 
                 SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(_connectionString)
                 {
-                    InitialCatalog = "master" 
+                    InitialCatalog = "master" // Bắt buộc trỏ về master để có quyền ghi đè DB hiện tại
                 };
 
                 using (SqlConnection conn = new SqlConnection(builder.ConnectionString))
                 {
                     await conn.OpenAsync();
                     
-                    // 1. Ngắt kết nối của các user khác để ghi đè
+                    // 1. Ngắt kết nối của các user/app khác để tránh lỗi "Database in use"
                     string killConnectionsQuery = $"ALTER DATABASE [{_databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE";
                     using (SqlCommand cmd1 = new SqlCommand(killConnectionsQuery, conn)) { await cmd1.ExecuteNonQueryAsync(); }
 
@@ -118,6 +121,9 @@ namespace BookStore.API.Controllers
                     string multiUserQuery = $"ALTER DATABASE [{_databaseName}] SET MULTI_USER";
                     using (SqlCommand cmd3 = new SqlCommand(multiUserQuery, conn)) { await cmd3.ExecuteNonQueryAsync(); }
                 }
+
+                // 🔴 SỬA LỖI 2: Dọn dẹp bộ nhớ đệm kết nối của EF Core/ADO.NET để tránh lỗi sập web sau khi Restore
+                SqlConnection.ClearAllPools();
 
                 return Ok(new { message = "Đã phục hồi dữ liệu thành công! Vui lòng tải lại trang web." });
             }

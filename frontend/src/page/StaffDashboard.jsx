@@ -5,10 +5,11 @@ import {
   FaSearch, FaFilter, FaEye, FaCheck, FaTimes, 
   FaHome, FaClipboardList, FaBox, FaUsers, FaSignOutAlt, FaBell,
   FaPrint, FaArrowRight, FaClipboardCheck, FaFileExcel, FaSync,
-  FaUserAlt, FaChartBar, FaCalendarAlt, FaStore
+  FaUserAlt, FaChartBar, FaCalendarAlt, FaStore, FaPlus, FaEdit, FaListUl, FaFire 
 } from 'react-icons/fa';
 
-const API_BASE_URL = 'http://localhost:5000/api'; 
+// Tự động nhận diện URL API thực tế khi đưa lên mạng
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
 
 const StaffDashboard = () => {
   const navigate = useNavigate();
@@ -18,8 +19,10 @@ const StaffDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [books, setBooks] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [categories, setCategories] = useState([]); 
   const [stats, setStats] = useState({
-    pendingOrders: 0, shippingOrders: 0, completedToday: 0, lowStockBooks: 0
+    pendingOrders: 0, shippingOrders: 0, completedToday: 0, lowStockBooks: 0,
+    topSellingBooks: [], topBuyers: [] 
   });
   
   const [loading, setLoading] = useState(false);
@@ -76,28 +79,101 @@ const StaffDashboard = () => {
   const getBookId = (b) => b.id ?? b.Id ?? b.maSach ?? b.MaSach ?? b.masach ?? 'N/A';
   const getBookImg = (b) => b.imageUrl ?? b.ImageUrl ?? b.image ?? b.Image ?? b.anhSach ?? b.AnhSach ?? 'https://placehold.co/50x70?text=No+Image';
 
-  // ================= 1. FETCH DATA ĐƠN HÀNG =================
+  // ================= 1. FETCH DATA ĐƠN HÀNG & TÍNH TOP 10 =================
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
       const statRes = await fetch(`${API_BASE_URL}/orders/staff-stats`, { headers: getAuthHeaders() });
-      if (statRes.ok) setStats(await statRes.json());
+      let currentStats = { pendingOrders: 0, shippingOrders: 0, completedToday: 0, lowStockBooks: 0 };
+      if (statRes.ok) currentStats = await statRes.json();
+
+      // 🌟 LẤY DANH SÁCH KHÁCH HÀNG ĐỂ TÌM MÃ KH DÙ API ĐƠN HÀNG CÓ THIẾU
+      let usersList = [];
+      try {
+        const userRes = await fetch(`${API_BASE_URL}/auth/users`, { headers: getAuthHeaders() });
+        if(userRes.ok) {
+            const uData = await userRes.json();
+            usersList = Array.isArray(uData) ? uData : (uData.data || uData.items || []);
+        }
+      } catch(e) {}
 
       const orderRes = await fetch(`${API_BASE_URL}/orders/all`, { headers: getAuthHeaders() });
       if (orderRes.ok) {
         const orderData = await orderRes.json();
         const sortedData = Array.isArray(orderData) ? orderData.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)) : [];
-        const formattedOrders = sortedData.map(o => ({
-          id: o.id,
-          name: o.customerName || o.CustomerName || o.fullName || 'Khách vãng lai',
-          phone: o.phone || o.phoneNumber || o.PhoneNumber || 'Trống',
-          item: o.itemSummary || (o.orderItems || o.items || []).map(i => i.bookTitle || i.productName).join(', ') || 'Sản phẩm',
-          rawTotal: o.totalAmount !== undefined ? o.totalAmount : (o.total || 0),
-          status: getDisplayStatus(o.status),
-          statusColor: getStatusColor(o.status),
-          date: o.orderDate ? formatOrderDate(o.orderDate) : 'Đang cập nhật',
-          rawDate: o.orderDate ? new Date(o.orderDate) : new Date()
-        }));
+        
+        // --- LOGIC TÍNH TOÁN TOP 10 ---
+        const completedOrders = sortedData.filter(o => getDisplayStatus(o.status) === 'Hoàn tất');
+        const bookCount = {};
+        const customerCount = {};
+
+        completedOrders.forEach(o => {
+          const name = o.customerName || o.CustomerName || o.fullName || 'Khách vãng lai';
+          const phone = o.phone || o.phoneNumber || o.PhoneNumber || 'Trống';
+          
+          // Tự động dò tìm Mã KH
+          let customerId = o.userId || o.UserId || o.customerId || o.CustomerId || o.maKhachHang || o.MaKhachHang || o.appUserId || o.AppUserId;
+          if (!customerId) {
+              const matched = usersList.find(u => 
+                  (phone !== 'Trống' && (u.phoneNumber === phone || u.phone === phone)) || 
+                  ((u.fullName || u.FullName || u.hoTenKh || u.HoTenKh) === name)
+              );
+              if (matched) customerId = matched.id || matched.maKhachHang || matched.MaKhachHang;
+          }
+
+          // Định dạng: TÊN - MÃ KH
+          const displayCode = customerId ? customerId : (phone !== 'Trống' ? phone : 'Khách Lẻ');
+          const customerKey = `${name} - ${displayCode}`; // Đưa Tên lên trước
+
+          const items = o.orderItems || o.items || o.chiTietDonHang || [];
+          let totalBooksInOrder = 0;
+
+          items.forEach(i => {
+            const title = i.bookTitle || i.productName || i.tenSach || 'Sản phẩm';
+            const qty = i.quantity || i.soLuong || 1;
+            bookCount[title] = (bookCount[title] || 0) + qty;
+            totalBooksInOrder += qty;
+          });
+
+          if (totalBooksInOrder > 0) {
+            customerCount[customerKey] = (customerCount[customerKey] || 0) + totalBooksInOrder;
+          }
+        });
+
+        // Lấy Top 10
+        const topSellingBooks = Object.entries(bookCount).map(([title, qty]) => ({ title, qty })).sort((a, b) => b.qty - a.qty).slice(0, 10);
+        const topBuyers = Object.entries(customerCount).map(([info, qty]) => ({ info, qty })).sort((a, b) => b.qty - a.qty).slice(0, 10);
+
+        setStats({ ...currentStats, topSellingBooks, topBuyers });
+
+        const formattedOrders = sortedData.map(o => {
+          const rawName = o.customerName || o.CustomerName || o.fullName || 'Khách vãng lai';
+          const phone = o.phone || o.phoneNumber || o.PhoneNumber || 'Trống';
+          
+          let cId = o.userId || o.UserId || o.customerId || o.CustomerId || o.maKhachHang || o.MaKhachHang || o.appUserId || o.AppUserId;
+          if (!cId) {
+              const matched = usersList.find(u => 
+                  (phone !== 'Trống' && (u.phoneNumber === phone || u.phone === phone)) || 
+                  ((u.fullName || u.FullName || u.hoTenKh || u.HoTenKh) === rawName)
+              );
+              if (matched) cId = matched.id || matched.maKhachHang || matched.MaKhachHang;
+          }
+          
+          // Định dạng chuẩn: TÊN - MÃ KH để hiển thị trên bảng
+          const displayName = cId ? `${rawName} - ${cId}` : rawName; // Đưa Tên lên trước
+
+          return {
+            id: o.id,
+            name: displayName,
+            phone: phone,
+            item: o.itemSummary || (o.orderItems || o.items || []).map(i => i.bookTitle || i.productName).join(', ') || 'Sản phẩm',
+            rawTotal: o.totalAmount !== undefined ? o.totalAmount : (o.total || 0),
+            status: getDisplayStatus(o.status),
+            statusColor: getStatusColor(o.status),
+            date: o.orderDate ? formatOrderDate(o.orderDate) : 'Đang cập nhật',
+            rawDate: o.orderDate ? new Date(o.orderDate) : new Date()
+          }
+        });
         setOrders(formattedOrders);
       } else if (orderRes.status === 401) {
         handleLogout();
@@ -146,6 +222,25 @@ const StaffDashboard = () => {
     } finally { setLoading(false); }
   };
 
+  // ================= 4. FETCH DATA DANH MỤC =================
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      let res = await fetch(`${API_BASE_URL}/categories`, { headers: getAuthHeaders() });
+      if (!res.ok && res.status === 404) res = await fetch(`${API_BASE_URL}/danhmuc`, { headers: getAuthHeaders() });
+
+      if (res.ok) {
+        const data = await res.json();
+        const categoryList = Array.isArray(data) ? data : (data.data || data.items || []);
+        setCategories(categoryList);
+      } else {
+        setCategories([]);
+      }
+    } catch (error) {
+      console.error("Lỗi tải danh mục:", error); setCategories([]);
+    } finally { setLoading(false); }
+  };
+
   useEffect(() => {
     fetchDashboardData();
     fetchBooks();
@@ -159,19 +254,8 @@ const StaffDashboard = () => {
     if (activeMenu === 'orders' || activeMenu === 'dashboard') fetchDashboardData();
     if (activeMenu === 'inventory') fetchBooks();
     if (activeMenu === 'customers') fetchCustomers();
+    if (activeMenu === 'categories') fetchCategories(); 
   }, [activeMenu]);
-
-  // Dữ liệu cho biểu đồ doanh thu gần đây
-  const chartDataMap = {};
-  orders.forEach(o => {
-    if (o.status === 'Hoàn tất') {
-      const d = o.rawDate;
-      const key = `${d.getDate()}/${d.getMonth() + 1}`;
-      chartDataMap[key] = (chartDataMap[key] || 0) + o.rawTotal;
-    }
-  });
-  const chartData = Object.keys(chartDataMap).map(key => ({ label: key, value: chartDataMap[key] })).slice(-7);
-  const maxChartValue = Math.max(...chartData.map(d => d.value), 100000);
 
   const displayOrders = orders.filter(o => 
     (searchTerm === '' || o.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) || o.name.toLowerCase().includes(searchTerm.toLowerCase()) || o.phone.includes(searchTerm)) &&
@@ -198,11 +282,23 @@ const StaffDashboard = () => {
     return searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase()) || email.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  const displayCategories = categories.filter(c => {
+    const name = c.categoryName || c.CategoryName || c.tenDanhMuc || c.TenDanhMuc || '';
+    const code = c.id || c.maDanhMuc || c.MaDanhMuc || '';
+    return searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase()) || code.toString().toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   const handleExportExcel = () => {
     if (displayOrders.length === 0) { alert("Không có dữ liệu để xuất!"); return; }
     const headers = ["Mã Đơn Hàng", "Khách Hàng", "Số Điện Thoại", "Sản Phẩm", "Tổng Tiền", "Trạng Thái", "Ngày Đặt"];
     const csvRows = [headers.join(",")];
-    displayOrders.forEach(o => csvRows.push([`"${o.id}"`, `"${o.name}"`, `"${o.phone}"`, `"${o.item}"`, o.rawTotal, `"${o.status}"`, `"${o.date}"`].join(",")));
+    
+    const escapeCsv = (text) => `"${String(text).replace(/"/g, '""')}"`;
+
+    displayOrders.forEach(o => {
+      csvRows.push([escapeCsv(o.id), escapeCsv(o.name), escapeCsv(o.phone), escapeCsv(o.item), o.rawTotal, escapeCsv(o.status), escapeCsv(o.date)].join(","));
+    });
+    
     const blob = new Blob(["\uFEFF" + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -256,6 +352,7 @@ const StaffDashboard = () => {
           <SidebarItem icon={<FaHome />} label="Tổng quan" active={activeMenu === 'dashboard'} onClick={() => setActiveMenu('dashboard')} />
           <SidebarItem icon={<FaClipboardList />} label="Quản lý Đơn hàng" active={activeMenu === 'orders'} onClick={() => setActiveMenu('orders')} badge={stats.pendingOrders.toString()} />
           <SidebarItem icon={<FaBox />} label="Sản phẩm & Kho" active={activeMenu === 'inventory'} onClick={() => setActiveMenu('inventory')} />
+          <SidebarItem icon={<FaListUl />} label="Danh mục sách" active={activeMenu === 'categories'} onClick={() => setActiveMenu('categories')} />
           <SidebarItem icon={<FaUsers />} label="Khách hàng" active={activeMenu === 'customers'} onClick={() => setActiveMenu('customers')} />
         </nav>
 
@@ -314,30 +411,53 @@ const StaffDashboard = () => {
                 <StatCard icon={<FaExclamationTriangle />} title="Sách Sắp Hết Kho" value={stats.lowStockBooks} color="#dc2626" bg="#fee2e2" />
               </div>
 
-              {/* BỐ CỤC 2 CỘT: ĐƠN HÀNG & KHO HÀNG */}
+              {/* 🌟 2 BẢNG TOP 10 (SÁCH VÀ KHÁCH HÀNG) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
+                {/* Top 10 Sách */}
+                <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
+                    <FaFire color="#ef4444" /> Top 10 Sách Bán Chạy Nhất
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {stats.topSellingBooks && stats.topSellingBooks.length > 0 ? stats.topSellingBooks.map((b, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                              <span style={{ fontWeight: 'bold', color: idx < 3 ? '#ef4444' : '#64748b', width: '20px' }}>#{idx + 1}</span>
+                              <span style={{ fontSize: '14px', color: '#334155', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title}</span>
+                            </div>
+                            <span style={{ backgroundColor: '#fef2f2', color: '#ef4444', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{b.qty} cuốn</span>
+                          </div>
+                      )) : <div style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}>Chưa có dữ liệu sách bán chạy.</div>}
+                  </div>
+                </div>
+
+                {/* Top 10 Khách Hàng */}
+                <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
+                    <FaUsers color="#8b5cf6" /> Top 10 Khách Hàng VIP
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {stats.topBuyers && stats.topBuyers.length > 0 ? stats.topBuyers.map((c, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                              <span style={{ fontWeight: 'bold', color: idx < 3 ? '#8b5cf6' : '#64748b', width: '20px' }}>#{idx + 1}</span>
+                              <span style={{ fontSize: '14px', color: '#334155', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.info}</span>
+                            </div>
+                            <span style={{ backgroundColor: '#f5f3ff', color: '#8b5cf6', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{c.qty} cuốn</span>
+                          </div>
+                      )) : <div style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}>Chưa có dữ liệu khách hàng.</div>}
+                  </div>
+                </div>
+              </div>
+
+              {/* BẢNG ĐƠN HÀNG MỚI VÀ CẢNH BÁO TỒN KHO */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '25px' }}>
-                
-                {/* Khung 1: Đơn hàng mới nhất */}
                 <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-                  
-                  {/* SỬ DỤNG CSS GRID ĐỂ KHÓA CHẶT NÚT BẤM SÁT GÓC PHẢI */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', marginBottom: '18px', width: '100%' }}>
                     <h3 style={{ margin: 0, fontSize: '16px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
                       <FaClipboardList color="#0284c7" /> Đơn hàng mới nhất
                     </h3>
-                    <button 
-                      onClick={() => setActiveMenu('orders')} 
-                      style={{
-                        border: 'none',
-                        background: 'none',
-                        color: '#0284c7',
-                        cursor: 'pointer',
-                        fontWeight: '700',
-                        fontSize: '14px',
-                        whiteSpace: 'nowrap',
-                        padding: '2px 0',
-                        transition: '0.2s'
-                      }}>
+                    <button onClick={() => setActiveMenu('orders')} style={{ border: 'none', background: 'none', color: '#0284c7', cursor: 'pointer', fontWeight: '700', fontSize: '14px' }}>
                       Xem tất cả →
                     </button>
                   </div>
@@ -371,27 +491,12 @@ const StaffDashboard = () => {
                   </div>
                 </div>
 
-                {/* Khung 2: Cảnh báo sách sắp hết kho */}
                 <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-                  
-                  {/* SỬ DỤNG CSS GRID ĐỂ KHÓA CHẶT NÚT BẤM SÁT GÓC PHẢI */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', marginBottom: '18px', width: '100%' }}>
                     <h3 style={{ margin: 0, fontSize: '16px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
                       <FaExclamationTriangle color="#dc2626" /> Sách sắp hết kho (&lt;5 cuốn)
                     </h3>
-                    <button 
-                      onClick={() => setActiveMenu('inventory')} 
-                      style={{
-                        border: 'none',
-                        background: 'none',
-                        color: '#0284c7',
-                        cursor: 'pointer',
-                        fontWeight: '700',
-                        fontSize: '14px',
-                        whiteSpace: 'nowrap',
-                        padding: '2px 0',
-                        transition: '0.2s'
-                      }}>
+                    <button onClick={() => setActiveMenu('inventory')} style={{ border: 'none', background: 'none', color: '#0284c7', cursor: 'pointer', fontWeight: '700', fontSize: '14px' }}>
                       Kho hàng →
                     </button>
                   </div>
@@ -409,45 +514,12 @@ const StaffDashboard = () => {
                       ))
                     ) : (
                       <div style={{ textAlign: 'center', padding: '40px 20px', color: '#10b981', fontSize: '14px', fontWeight: '600', backgroundColor: '#f0fdf4', borderRadius: '8px' }}>
-                        Tuyệt vời! Kho hàng hiện tại đầy đủ, không có sách sắp hết.
+                        Tuyệt vời! Kho hàng đầy đủ, không có sách sắp hết.
                       </div>
                     )}
                   </div>
                 </div>
-
               </div>
-
-              {/* BỔ SUNG BIỂU ĐỒ DOANH THU THỰC TẾ */}
-              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <h3 style={{ margin: '0 0 20px 0', color: '#1e293b', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
-                  <FaChartBar color="#10b981" /> Biểu đồ doanh thu các đơn hoàn tất gần đây
-                </h3>
-                <div style={{ display: 'flex', alignItems: 'flex-end', height: '220px', gap: '20px', paddingBottom: '10px', borderBottom: '2px solid #f1f5f9', overflowX: 'auto' }}>
-                  {chartData.length > 0 ? chartData.map((item, idx) => {
-                    const heightPercent = Math.max((item.value / maxChartValue) * 100, 4);
-                    return (
-                      <div key={idx} style={{ flex: '1', minWidth: '50px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                        <span style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px', fontWeight: '600' }}>
-                          {(item.value / 1000).toLocaleString()}k
-                        </span>
-                        <div style={{ 
-                          width: '100%', maxWidth: '40px', height: `${heightPercent}%`, 
-                          backgroundColor: '#10b981', borderRadius: '6px 6px 0 0', 
-                          transition: 'height 0.4s ease' 
-                        }} />
-                        <span style={{ fontSize: '12px', color: '#1e293b', marginTop: '10px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                          {item.label}
-                        </span>
-                      </div>
-                    );
-                  }) : (
-                    <div style={{ width: '100%', textAlign: 'center', color: '#94a3b8', alignSelf: 'center', padding: '30px' }}>
-                      Chưa có đơn hàng hoàn tất nào để vẽ biểu đồ doanh thu.
-                    </div>
-                  )}
-                </div>
-              </div>
-
             </div>
           )}
 
@@ -503,31 +575,15 @@ const StaffDashboard = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
               <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                 <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  
-                  {/* Ô Tìm Kiếm Sách */}
                   <div style={{ position: 'relative', width: '280px' }}>
                     <FaSearch style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#94a3b8' }} />
                     <input type="text" placeholder="Tìm tên sách, tác giả..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '10px 10px 10px 38px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
                   </div>
-                  
-                  {/* Lọc Thể Loại */}
-                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', cursor: 'pointer', minWidth: '140px' }}>
-                    <option value="Tất cả">Tất cả thể loại</option>
-                    <option value="Văn học">Văn học</option>
-                    <option value="Kỹ năng">Kỹ năng</option>
-                    <option value="Kinh tế">Kinh tế</option>
-                    <option value="Thiếu nhi">Thiếu nhi</option>
-                  </select>
-
-                  {/* SẮP XẾP TỒN KHO */}
-                  <select value={sortStock} onChange={(e) => setSortStock(e.target.value)} style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #0284c7', outline: 'none', cursor: 'pointer', backgroundColor: '#f0f9ff', color: '#0284c7', fontWeight: '600' }}>
-                    <option value="default">Sắp xếp Tồn kho</option>
-                    <option value="asc">Tồn kho: Thấp đến nhiều</option>
-                    <option value="desc">Tồn kho: Nhiều đến ít</option>
-                  </select>
-
                 </div>
-                <button onClick={fetchBooks} style={{ padding: '10px 20px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><FaSync /> Làm mới</button>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <button onClick={fetchBooks} style={{ padding: '10px 20px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><FaSync /> Làm mới</button>
+                  <button onClick={() => navigate('/staff/books/add')} style={{ padding: '10px 20px', backgroundColor: '#2ecc71', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><FaPlus /> Thêm sách mới</button>
+                </div>
               </div>
 
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
@@ -540,10 +596,11 @@ const StaffDashboard = () => {
                       <th style={{ padding: '16px 20px' }}>Thể Loại</th>
                       <th style={{ padding: '16px 20px' }}>Giá Bán</th>
                       <th style={{ padding: '16px 20px', textAlign: 'center' }}>Tồn Kho</th>
+                      <th style={{ padding: '16px 20px', textAlign: 'center' }}>Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody style={{ fontSize: '14px', color: '#334155' }}>
-                    {displayBooks.length === 0 ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '50px' }}>{loading ? 'Đang tải...' : 'Chưa có dữ liệu sách hoặc không tìm thấy.'}</td></tr> : 
+                    {displayBooks.length === 0 ? <tr><td colSpan="7" style={{ textAlign: 'center', padding: '50px' }}>{loading ? 'Đang tải...' : 'Chưa có dữ liệu sách.'}</td></tr> : 
                      displayBooks.map((book, idx) => {
                        const stock = getBookStock(book);
                        const price = getBookPrice(book);
@@ -555,9 +612,7 @@ const StaffDashboard = () => {
 
                        return (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '10px 25px' }}>
-                            <img src={img} alt="bia-sach" style={{ width: '40px', height: '56px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #eee' }} />
-                          </td>
+                          <td style={{ padding: '10px 25px' }}><img src={img} alt="bia-sach" style={{ width: '40px', height: '56px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #eee' }} /></td>
                           <td style={{ padding: '16px 20px', fontWeight: '600', color: '#0284c7' }}>{id}</td>
                           <td style={{ padding: '16px 20px' }}>
                             <div style={{ fontWeight: '700', color: '#1e293b' }}>{title}</div>
@@ -565,8 +620,9 @@ const StaffDashboard = () => {
                           </td>
                           <td style={{ padding: '16px 20px' }}><span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>{category}</span></td>
                           <td style={{ padding: '16px 20px', fontWeight: '700', color: '#e11d48' }}>{formatCurrency(price)}</td>
+                          <td style={{ padding: '16px 20px', textAlign: 'center' }}><span style={{ fontWeight: 'bold', color: stock < 10 ? '#ef4444' : '#10b981', backgroundColor: stock < 10 ? '#fee2e2' : '#dcfce7', padding: '4px 12px', borderRadius: '20px' }}>{stock}</span></td>
                           <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                            <span style={{ fontWeight: 'bold', color: stock < 10 ? '#ef4444' : '#10b981', backgroundColor: stock < 10 ? '#fee2e2' : '#dcfce7', padding: '4px 12px', borderRadius: '20px' }}>{stock}</span>
+                             <button title="Sửa thông tin sách" onClick={() => navigate(`/staff/books/edit/${id}`)} style={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', color: '#495057', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}><FaEdit /></button>
                           </td>
                         </tr>
                        );
@@ -577,15 +633,72 @@ const StaffDashboard = () => {
             </div>
           )}
 
-          {/* ================= 4. TAB KHÁCH HÀNG ================= */}
+          {/* ================= 4. TAB QUẢN LÝ DANH MỤC ================= */}
+          {activeMenu === 'categories' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                  <div style={{ position: 'relative', width: '350px' }}>
+                    <FaSearch style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#94a3b8' }} />
+                    <input type="text" placeholder="Tìm kiếm theo mã hoặc tên danh mục..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '10px 10px 10px 38px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <button onClick={fetchCategories} style={{ padding: '10px 20px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><FaSync /> Làm mới</button>
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead style={{ backgroundColor: '#f8fafc', color: '#64748b', fontSize: '13px', textTransform: 'uppercase' }}>
+                    <tr>
+                      <th style={{ padding: '16px 25px' }}>Mã DM</th>
+                      <th style={{ padding: '16px 25px' }}>Tên Danh Mục</th>
+                      <th style={{ padding: '16px 25px' }}>Thuộc Nhóm</th>
+                      <th style={{ padding: '16px 25px' }}>Slug</th>
+                      <th style={{ padding: '16px 25px' }}>Mô Tả</th>
+                      <th style={{ padding: '16px 25px', textAlign: 'center' }}>Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody style={{ fontSize: '14px', color: '#334155' }}>
+                    {displayCategories.length === 0 ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '50px' }}>{loading ? 'Đang tải...' : 'Chưa có dữ liệu danh mục.'}</td></tr> : 
+                     displayCategories.map((cat, idx) => {
+                       const id = cat.maDanhMuc || cat.MaDanhMuc || cat.id || 'N/A';
+                       const name = cat.tenDanhMuc || cat.TenDanhMuc || cat.categoryName || 'N/A';
+                       const parent = cat.thuocNhom || cat.ThuocNhom || cat.parentGroup || '--- (Gốc) ---';
+                       const slug = cat.slug || cat.Slug || 'N/A';
+                       const desc = cat.moTa || cat.MoTa || cat.description || '';
+
+                       return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '16px 25px', fontWeight: 'bold', color: '#334155' }}>{id}</td>
+                          <td style={{ padding: '16px 25px', fontWeight: 'bold', color: parent === '--- (Gốc) ---' ? '#e74c3c' : '#334155' }}>
+                            {parent === '--- (Gốc) ---' ? `📂 ${name}` : `↳ ${name}`}
+                          </td>
+                          <td style={{ padding: '16px 25px', color: '#64748b' }}>{parent}</td>
+                          <td style={{ padding: '16px 25px' }}>{slug}</td>
+                          <td style={{ padding: '16px 25px', color: '#64748b' }}>{desc}</td>
+                          <td style={{ padding: '16px 25px', textAlign: 'center' }}>
+                            <button title="Sửa danh mục" style={{ backgroundColor: '#f1c40f', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <FaEdit />
+                            </button>
+                          </td>
+                        </tr>
+                       );
+                     })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ================= 5. TAB KHÁCH HÀNG ================= */}
           {activeMenu === 'customers' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                  <div style={{ position: 'relative', width: '320px' }}>
-                    <FaSearch style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#94a3b8' }} />
-                    <input type="text" placeholder="Tìm tên khách hàng, email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '10px 10px 10px 38px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
-                  </div>
+              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ position: 'relative', width: '320px' }}>
+                  <FaSearch style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#94a3b8' }} />
+                  <input type="text" placeholder="Tìm tên khách hàng, email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '10px 10px 10px 38px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
                 </div>
                 <button onClick={fetchCustomers} style={{ padding: '10px 20px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><FaSync /> Làm mới</button>
               </div>
@@ -601,7 +714,7 @@ const StaffDashboard = () => {
                     </tr>
                   </thead>
                   <tbody style={{ fontSize: '14px', color: '#334155' }}>
-                    {displayCustomers.length === 0 ? <tr><td colSpan="4" style={{ textAlign: 'center', padding: '50px' }}>{loading ? 'Đang tải...' : 'Chưa có dữ liệu khách hàng hoặc không tìm thấy.'}</td></tr> : 
+                    {displayCustomers.length === 0 ? <tr><td colSpan="4" style={{ textAlign: 'center', padding: '50px' }}>{loading ? 'Đang tải...' : 'Chưa có dữ liệu khách hàng.'}</td></tr> : 
                      displayCustomers.map((cus, idx) => {
                        const statusNum = cus.status !== undefined ? cus.status : (cus.TrangThai !== undefined ? cus.TrangThai : 1);
                        const isActive = statusNum === 1;
@@ -686,7 +799,14 @@ const StaffDashboard = () => {
 
 const getStatusColor = (status) => {
   const clean = status ? status.trim() : '';
-  switch (clean) { case 'ChoXuLy': case 'Chờ xử lý': return '#f59e0b'; case 'DaXacNhan': case 'Đã xác nhận': return '#8b5cf6'; case 'DangGiao': case 'Đang giao': return '#3b82f6'; case 'HoanTat': case 'Hoàn tất': return '#10b981'; case 'DaHuy': case 'Đã hủy': return '#ef4444'; default: return '#64748b'; }
+  switch (clean) { 
+    case 'ChoXuLy': case 'Chờ xử lý': return '#f59e0b'; 
+    case 'DaXacNhan': case 'Đã xác nhận': return '#8b5cf6'; 
+    case 'DangGiao': case 'Đang giao': return '#3b82f6'; 
+    case 'HoanTat': case 'Hoàn tất': return '#10b981'; 
+    case 'DaHuy': case 'Đã hủy': return '#ef4444'; 
+    default: return '#64748b'; 
+  }
 };
 
 const SidebarItem = ({ icon, label, active, onClick, color, badge }) => (

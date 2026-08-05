@@ -139,9 +139,7 @@ public class AuthController : ControllerBase
         
         string resetToken = Guid.NewGuid().ToString(); 
         
-        // Link gửi vào mail có IP để test trên điện thoại
-// Xóa dòng có số IP đi và thay bằng dòng này:
-string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&token={resetToken}";        
+        string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&token={resetToken}";        
         string emailSubject = "Yêu cầu khôi phục mật khẩu - BookGalaxy";
         string emailBody = $@"
             <div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
@@ -165,7 +163,6 @@ string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&
         }
     }
 
-    // 🌟 ĐÃ THÊM HÀM NÀY VÀO ĐÚNG VỊ TRÍ 🌟
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -199,7 +196,6 @@ string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&
             return StatusCode(500, new ApiErrorResponse("Lỗi hệ thống khi cập nhật mật khẩu mới."));
         }
     }
-
 
     // ====================================================================
     // API QUẢN LÝ NGƯỜI DÙNG (YÊU CẦU QUYỀN ADMIN / STAFF)
@@ -314,10 +310,6 @@ string resetLink = $"http://localhost:3000/reset-password?email={request.Email}&
         }
     }
 }
-
-// ====================================================================
-// CÁC LỚP BỔ TRỢ ĐƯỢC TÁCH RA NGOÀI (KHÔNG BỊ LỖI LỒNG NHAU)
-// ====================================================================
 
 public class ApiErrorResponse 
 {

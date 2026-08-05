@@ -265,10 +265,10 @@ GO
 
 -- ----- Sách -----
 INSERT INTO SACH (MASACH, TENSACH, TACGIA, GIABAN, GIAMGIA, SOLUONGTON, NOIDUNGDEMO, LOAISACH, NAMXUATBAN, SOTRANG, NGONNGU, ANHSACH, MANHACUNGCAP, NHAXUATBAN) VALUES
-('S001', N'Nhà Giả Kim', N'Paulo Coelho', 79000, 10, 10, N'Hành trình đi tìm kho báu và ý nghĩa cuộc sống.', N'Văn học', 1988, 228, N'Tiếng Việt', 'https://placehold.co/300x420/e71a22/FFF?text=Nha+Gia+Kim', 'NCC01', N'NXB Hội Nhà Văn'),
+('S001', N'Nhà Giả Kim', N'Paulo Coelho', 79000, 10, 10, N'Hành trình đi tìm kho báu và ý nghĩa cuộc sống.', N'Văn học', 1988, 228, N'Tiếng Việt', '\Image\VANHOC\TIEUTHUYET\NHAGIAKIM.webp', 'NCC01', N'NXB Hội Nhà Văn'),
 ('S002', N'Sword Art Online - Tập 1', N'Reki Kawahara', 85000, 0, 20, N'Trận chiến sinh tồn trong thế giới ảo.', N'Văn học', 2009, 250, N'Tiếng Việt', 'https://placehold.co/300x420/e71a22/FFF?text=SAO+1', 'NCC03', N'IPM'),
 ('S003', N'Bên Nhau Trọn Đời', N'Cố Mạn', 65000, 10, 4, N'Câu chuyện tình yêu đầy lãng mạn.', N'Văn học', 2010, 300, N'Tiếng Việt', 'https://placehold.co/300x420/e71a22/FFF?text=SAO+1', 'NCC01', N'NXB Văn Học'),
-('S004', N'Đắc Nhân Tâm', N'Dale Carnegie', 86000, 10, 15, N'Nghệ thuật đối nhân xử thế kinh điển mọi thời đại.', N'Kỹ năng', 1936, 320, N'Tiếng Việt', 'https://placehold.co/300x420/cc151e/FFF?text=Dac+Nhan+Tam', 'NCC01', N'First News'),
+('S004', N'Đắc Nhân Tâm', N'Dale Carnegie', 86000, 10, 15, N'Nghệ thuật đối nhân xử thế kinh điển mọi thời đại.', N'Kỹ năng', 1936, 320, N'Tiếng Việt', '\Image\KYNANG\KYNANGSONG\DACNHANTAM.gif', 'NCC01', N'First News'),
 ('S005', N'Tuổi Trẻ Đáng Giá Bao Nhiêu', N'Rosie Nguyễn', 72000, 0, 20, N'Cuốn sách truyền cảm hứng dành cho người trẻ Việt Nam.', N'Kỹ năng', 2016, 250, N'Tiếng Việt', 'https://placehold.co/300x420/cc151e/FFF?text=Tuoi+Tre', 'NCC03', N'Nhã Nam'),
 ('S006', N'Cha Giàu Cha Nghèo', N'Robert Kiyosaki', 95000, 10, 30, N'Nền tảng tư duy tài chính thay đổi cuộc đời.', N'Kinh tế', 1997, 336, N'Tiếng Việt', 'https://placehold.co/300x420/b31219/FFF?text=Cha+Giau+Cha+Ngheo', 'NCC03', N'NXB Trẻ'),
 ('S007', N'Tiếp Thị 4.0', N'Philip Kotler', 119000, 0, 10, N'Xu hướng marketing trong kỷ nguyên số.', N'Kinh tế', 2017, 280, N'Tiếng Việt', 'https://placehold.co/300x420/b31219/FFF?text=Marketing+4.0', 'NCC03', N'NXB Trẻ'),
@@ -314,3 +314,21 @@ SELECT * FROM CHITIETPHIEUNHAP;
 SELECT * FROM HOADON;
 SELECT * FROM SACH;
 SELECT * FROM NHANVIEN;
+SELECT * FROM KHACHHANG;
+
+/*
+DROP TABLE IF EXISTS [__EFMigrationsHistory];
+DROP TABLE IF EXISTS [ActivityLogs];
+
+-- 1. Chuyển context sang master để giải phóng database BANSACH
+USE master;
+GO
+
+-- 2. Ngắt kết nối các tiến trình khác đang dùng BANSACH và xóa database
+ALTER DATABASE [BANSACH] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE [BANSACH];
+GO
+
+-- 3. Tạo lại database trống mới tinh
+CREATE DATABASE [BANSACH];
+GO*/

@@ -123,7 +123,6 @@ function BackupRestoreSection() {
         {/* Card 1: Sao lưu */}
         <div style={{ flex: '1 1 300px', padding: '18px', border: '1px solid #e5e7eb', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '215px' }}>
           <div>
-            {/* Đồng bộ chiều cao header bên trái bằng cách thêm minHeight và căn giữa dọc */}
             <div style={{ display: 'flex', alignItems: 'center', minHeight: '36px', marginBottom: '10px' }}>
               <h4 style={{ margin: 0, fontSize: '15px', color: '#374151', fontWeight: '700' }}>Tạo bản sao lưu mới</h4>
             </div>
@@ -142,7 +141,6 @@ function BackupRestoreSection() {
         {/* Card 2: Phục hồi */}
         <div style={{ flex: '1 1 300px', padding: '18px', border: '1px solid #e5e7eb', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '215px' }}>
           <div>
-            {/* Header phải cân đối tuyệt đối với bên trái */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '36px', marginBottom: '10px' }}>
               <h4 style={{ margin: 0, fontSize: '15px', color: '#374151', fontWeight: '700', whiteSpace: 'nowrap' }}>
                 Phục hồi dữ liệu
@@ -167,7 +165,6 @@ function BackupRestoreSection() {
             </p>
           </div>
           
-          {/* Khu vực chọn file và nút Phục hồi nằm ngang */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <select 
               value={selectedFile}
@@ -213,6 +210,9 @@ export default function Dashboard() {
     activityLogs: [] 
   });
   const [loading, setLoading] = useState(true);
+
+  // 🌟 KHAI BÁO STATE CHO BỘ LỌC LỊCH SỬ THAO TÁC
+  const [logRoleFilter, setLogRoleFilter] = useState('All');
 
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [rawStore, setRawStore] = useState({ orders: [], books: [], users: [], logs: [] });
@@ -332,7 +332,9 @@ export default function Dashboard() {
     const topBooks = Object.keys(bookSalesCount).map(title => ({ title, sold: bookSalesCount[title] })).sort((a, b) => b.sold - a.sold).slice(0, 5);
 
     const sortedRecentOrders = [...filteredOrders].sort((a, b) => new Date(getOrderDate(b)) - new Date(getOrderDate(a))).slice(0, 5);
-    const sortedLogs = [...filteredLogs].sort((a, b) => new Date(b.timestamp || b.Timestamp) - new Date(a.timestamp || a.Timestamp)).slice(0, 5);
+    
+    // Hiển thị tối đa 20 dòng lịch sử thao tác
+    const sortedLogs = [...filteredLogs].sort((a, b) => new Date(b.timestamp || b.Timestamp) - new Date(a.timestamp || a.Timestamp)).slice(0, 20);
 
     setStats({
       totalBooks: totalBooksCount,
@@ -359,6 +361,22 @@ export default function Dashboard() {
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center', fontSize: '16px', color: '#666' }}>Đang tải số liệu hệ thống...</div>;
   }
+
+  // 🌟 LOGIC LỌC TÀI KHOẢN (TRƯỚC KHI RENDER)
+  const filteredActivityLogs = stats.activityLogs.filter(log => {
+    if (logRoleFilter === 'All') return true;
+    
+    // Đưa chuỗi người dùng về viết thường để so sánh chính xác
+    const userStr = (log.userId || log.UserId || '').toLowerCase();
+    const isAdmin = userStr.includes('quản trị') || userStr.includes('admin');
+    const isStaff = userStr.includes('nhân viên') || userStr.includes('staff');
+    
+    if (logRoleFilter === 'Admin') return isAdmin;
+    if (logRoleFilter === 'Staff') return isStaff;
+    if (logRoleFilter === 'Customer') return !isAdmin && !isStaff;
+    
+    return true;
+  });
 
   return (
     <div style={{ padding: '25px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
@@ -580,27 +598,43 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ================= 9. LỊCH SỬ THAO TÁC ================= */}
+      {/* ================= 9. LỊCH SỬ THAO TÁC CÓ THANH CUỘN & BỘ LỌC ================= */}
       <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
           <h3 style={{ margin: 0, color: '#8e44ad', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FaHistory color="#8e44ad" /> Lịch sử thao tác {dateRange.start && "(Lọc theo ngày)"}
           </h3>
+          
+          {/* 🌟 NÚT DROPDOWN LỌC TÀI KHOẢN */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: '#4b5563', fontWeight: '600' }}>Người thao tác:</span>
+            <select 
+              value={logRoleFilter}
+              onChange={(e) => setLogRoleFilter(e.target.value)}
+              style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px', outline: 'none', cursor: 'pointer', backgroundColor: '#f9fafb', color: '#374151', fontWeight: '600' }}
+            >
+              <option value="All">Tất cả mọi người</option>
+              <option value="Admin">Quản Trị Viên</option>
+              <option value="Staff">Nhân Viên</option>
+              <option value="Customer">Khách Hàng</option>
+            </select>
+          </div>
         </div>
         
-        <div style={{ overflowX: 'auto' }}>
+        {/* Khung chứa bảng có thanh cuộn dọc (Scroll) */}
+        <div style={{ maxHeight: '350px', overflowY: 'auto', overflowX: 'auto', border: '1px solid #f3f4f6', borderRadius: '6px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
-            <thead style={{ backgroundColor: '#f9fafb', color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>
+            <thead style={{ backgroundColor: '#f9fafb', color: '#4b5563', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, zIndex: 1 }}>
               <tr>
-                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Thời gian</th>
-                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Người thao tác</th>
-                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Hành động</th>
-                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Chi tiết</th>
+                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', backgroundColor: '#f9fafb' }}>Thời gian</th>
+                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', backgroundColor: '#f9fafb' }}>Người thao tác</th>
+                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', backgroundColor: '#f9fafb' }}>Hành động</th>
+                <th style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', backgroundColor: '#f9fafb' }}>Chi tiết</th>
               </tr>
             </thead>
             <tbody>
-              {stats.activityLogs.length > 0 ? (
-                stats.activityLogs.map((log, index) => {
+              {filteredActivityLogs.length > 0 ? (
+                filteredActivityLogs.map((log, index) => {
                   const action = log.action || log.Action || "Thay đổi";
                   return (
                     <tr key={log.id || index} style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -627,8 +661,8 @@ export default function Dashboard() {
                 })
               ) : (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#9ca3af', fontSize: '14px' }}>
-                    Chưa có dữ liệu lịch sử thao tác.
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af', fontSize: '14px', backgroundColor: '#f9fafb' }}>
+                    Không có lịch sử thao tác nào của nhóm tài khoản này.
                   </td>
                 </tr>
               )}

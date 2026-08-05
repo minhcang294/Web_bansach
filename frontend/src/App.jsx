@@ -17,7 +17,7 @@ import RegisterPage from "./page/RegisterPage";
 import OrderHistoryPage from "./page/OrderHistoryPage";
 import OrderDetailPage from "./page/OrderDetailPage";
 import ForgotPassword from './page/ForgotPassword';
-import ResetPassword from './page/ResetPassword'; // 🌟 ĐÃ THÊM: Import trang Đặt lại mật khẩu
+import ResetPassword from './page/ResetPassword'; 
 import SearchPage from "./page/SearchPage"; 
 import AboutPage from "./page/AboutPage";
 
@@ -31,6 +31,10 @@ import UserManagement from "./page/UserManagement";
 import ReportsPage from "./page/ReportsPage"; 
 import StaffDashboard from "./page/StaffDashboard"; 
 import ImportManagement from "./page/ImportManagement";
+
+// 👉 BỔ SUNG: Import 2 trang Thêm và Sửa sách cho nhân viên (Bạn nhớ tạo 2 file này nhé)
+import AddBookPage from "./page/AddBookPage"; 
+import EditBookPage from "./page/EditBookPage"; 
 
 // ================= CONTEXTS & PROVIDERS =================
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -55,14 +59,14 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 const AppLayout = () => {
   const { pathname } = useLocation();
   
-  // 🌟 ĐÃ THÊM: /reset-password vào danh sách ẩn Header/Footer
+  // Danh sách các đường dẫn ẩn Header và Footer
   const hideLayout = 
     pathname === "/login" || 
     pathname === "/register" || 
     pathname === "/forgot-password" || 
     pathname === "/reset-password" || 
     pathname.startsWith("/admin") || 
-    pathname.startsWith("/staff");
+    pathname.startsWith("/staff"); // Dùng startsWith nên nó sẽ tự động ẩn Header/Footer cho cả /staff/books/add
 
   return (
     <div className="app">
@@ -77,7 +81,7 @@ const AppLayout = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} /> {/* 🌟 ĐÃ THÊM: Khai báo Route */}
+          <Route path="/reset-password" element={<ResetPassword />} /> 
           <Route path="/search" element={<SearchPage />} />
           <Route path="/about" element={<AboutPage />} />
 
@@ -93,6 +97,24 @@ const AppLayout = () => {
             element={
               <ProtectedRoute allowedRoles={["Staff"]}>
                 <StaffDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          {/* 👉 ĐÃ FIX: Khai báo đường dẫn cho nút Thêm sách */}
+          <Route 
+            path="/staff/books/add" 
+            element={
+              <ProtectedRoute allowedRoles={["Staff"]}>
+                <AddBookPage />
+              </ProtectedRoute>
+            } 
+          />
+          {/* 👉 ĐÃ FIX: Khai báo đường dẫn cho nút Sửa sách */}
+          <Route 
+            path="/staff/books/edit/:id" 
+            element={
+              <ProtectedRoute allowedRoles={["Staff"]}>
+                <EditBookPage />
               </ProtectedRoute>
             } 
           />

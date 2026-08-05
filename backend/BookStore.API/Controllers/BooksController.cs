@@ -1,8 +1,10 @@
 using BookStore.API.Models.DTOs.Book;
+using BookStore.API.Models.Entities; 
 using BookStore.API.Services.Interfaces;
-using BookStore.API.Repositories.Interfaces; // Tiêm thêm interface của Log
+using BookStore.API.Repositories.Interfaces; 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims; 
 
 namespace BookStore.API.Controllers;
 
@@ -11,9 +13,8 @@ namespace BookStore.API.Controllers;
 public class BooksController : ControllerBase
 {
     private readonly IBookService _bookService;
-    private readonly IActivityLogRepository _activityLogRepo; // Khai báo bộ ghi log
+    private readonly IActivityLogRepository _activityLogRepo; 
 
-    // Đưa bộ ghi log vào Constructor để sử dụng
     public BooksController(IBookService bookService, IActivityLogRepository activityLogRepo) 
     {
         _bookService = bookService;
@@ -30,9 +31,6 @@ public class BooksController : ControllerBase
         return Ok(result);
     }
 
-    // ====================================================================
-    // API TÌM KIẾM RIÊNG ĐỂ KHỚP VỚI FRONTEND (/api/books/search)
-    // ====================================================================
     /// <summary>Tìm kiếm sách theo từ khóa. Công khai.</summary>
     [HttpGet("search")]
     [AllowAnonymous]
@@ -47,7 +45,7 @@ public class BooksController : ControllerBase
         return Ok(result.Items);
     }
 
-    /// <summary>Chi tiết 1 cuốn sách theo mã sách (MASACH). Công khai.</summary>
+    /// <summary>Chi tiết 1 cuốn sách theo mã sách. Công khai.</summary>
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(string id)
@@ -56,31 +54,32 @@ public class BooksController : ControllerBase
         return book is null ? NotFound(new { message = "Không tìm thấy sách." }) : Ok(book);
     }
 
-    /// <summary>Chỉ Admin được thêm sách mới.</summary>
+    /// <summary>Thêm sách mới.</summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Staff, User")] 
     public async Task<IActionResult> Create([FromBody] BookCreateDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         
         var created = await _bookService.CreateAsync(dto);
 
-        // ---> BẮT ĐẦU GHI LOG: THÊM SÁCH <---
-        // Lấy tên Admin đang đăng nhập từ Token, nếu không có thì để mặc định là "Admin"
-        var userName = User.Identity?.Name ?? "Admin"; 
-        await _activityLogRepo.LogActionAsync(
-            userId: userName,
-            action: "Thêm mới",
-            entityType: "Sách",
-           details: $"Đã thêm sách mới: {dto.Title} (Mã sách: {created.Id})"
-        );
+        // 👉 Ghi log lịch sử thêm mới
+        var userName = User.FindFirstValue(ClaimTypes.Name) ?? "Quản Trị Viên";
+        await _activityLogRepo.AddLogAsync(new ActivityLog
+        {
+            Action = "Thêm mới",
+            Details = $"Đã thêm sách mới (Mã: {created.Id})",
+            EntityType = "Sách",
+            Timestamp = DateTime.Now,
+            UserId = userName
+        });
 
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    /// <summary>Chỉ Admin được sửa sách.</summary>
+    /// <summary>Sửa thông tin sách.</summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Staff, User")] 
     public async Task<IActionResult> Update(string id, [FromBody] BookUpdateDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -88,35 +87,47 @@ public class BooksController : ControllerBase
         var updated = await _bookService.UpdateAsync(id, dto);
         if (updated is null) return NotFound(new { message = "Không tìm thấy sách." });
 
-        // ---> BẮT ĐẦU GHI LOG: SỬA SÁCH <---
-        var userName = User.Identity?.Name ?? "Admin";
-        await _activityLogRepo.LogActionAsync(
-            userId: userName,
-            action: "Cập nhật",
-            entityType: "Sách",
-            details: $"Đã cập nhật thông tin cuốn sách có mã: {id}"
-        );
+        // 👉 Ghi log lịch sử cập nhật
+        var userName = User.FindFirstValue(ClaimTypes.Name) ?? "Quản Trị Viên";
+        await _activityLogRepo.AddLogAsync(new ActivityLog
+        {
+            Action = "Cập nhật",
+            Details = $"Cập nhật thông tin sách có mã: {id}",
+            EntityType = "Sách",
+            Timestamp = DateTime.Now,
+            UserId = userName
+        });
 
         return Ok(updated);
     }
 
-    /// <summary>Chỉ Admin được xóa sách.</summary>
+    /// <summary>Xóa sách (Chỉ Admin).</summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")] 
     public async Task<IActionResult> Delete(string id)
     {
-        var deleted = await _bookService.DeleteAsync(id);
-        if (!deleted) return NotFound(new { message = "Không tìm thấy sách." });
+        try
+        {
+            var deleted = await _bookService.DeleteAsync(id);
+            if (!deleted) return NotFound(new { message = "Không tìm thấy sách." });
 
-        // ---> BẮT ĐẦU GHI LOG: XÓA SÁCH <---
-        var userName = User.Identity?.Name ?? "Admin";
-        await _activityLogRepo.LogActionAsync(
-            userId: userName,
-            action: "Xóa",
-            entityType: "Sách",
-            details: $"Đã xóa cuốn sách có mã: {id}"
-        );
+            // 👉 Ghi log lịch sử xóa thành công
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "Quản Trị Viên";
+            await _activityLogRepo.AddLogAsync(new ActivityLog
+            {
+                Action = "Xóa",
+                Details = $"Đã xóa sách có mã: {id}",
+                EntityType = "Sách",
+                Timestamp = DateTime.Now,
+                UserId = userName
+            });
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            // Bắt lỗi khi SQL Server từ chối xóa do vướng khóa ngoại (Hóa đơn / Phiếu nhập)
+            return BadRequest(new { message = "Không thể xóa sách này vì đã có dữ liệu giao dịch liên quan (Hóa đơn hoặc Phiếu nhập)." });
+        }
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BookStore.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260801063605_AddActivityLogTable")]
-    partial class AddActivityLogTable
+    [Migration("20260805120926_InitActivityLog")]
+    partial class InitActivityLog
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -413,29 +413,6 @@ namespace BookStore.API.Migrations
                     b.ToTable("KHUYENMAI");
                 });
 
-            modelBuilder.Entity("BookStore.API.Models.Entities.NhaCungCap", b =>
-                {
-                    b.Property<string>("MaNhaCungCap")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .HasColumnName("MANHACUNGCAP");
-
-                    b.Property<string>("MoTa")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("MOTA");
-
-                    b.Property<string>("TenNhaCungCap")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
-                        .HasColumnName("TENNHACUNGCAP");
-
-                    b.HasKey("MaNhaCungCap");
-
-                    b.ToTable("NHACUNGCAP");
-                });
-
             modelBuilder.Entity("BookStore.API.Models.Entities.NhanVien", b =>
                 {
                     b.Property<string>("MaNhanVien")
@@ -650,6 +627,48 @@ namespace BookStore.API.Migrations
                     b.ToTable("SACH");
                 });
 
+            modelBuilder.Entity("BookStore.API.Models.NhaCungCap", b =>
+                {
+                    b.Property<string>("MaNhaCungCap")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("MANHACUNGCAP");
+
+                    b.Property<string>("DiaChi")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("DIACHI");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<string>("MoTa")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("MOTA");
+
+                    b.Property<string>("SoDienThoai")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)")
+                        .HasColumnName("SODIENTHOAI");
+
+                    b.Property<string>("TenNhaCungCap")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("TENNHACUNGCAP");
+
+                    b.HasKey("MaNhaCungCap");
+
+                    b.ToTable("NHACUNGCAP");
+                });
+
             modelBuilder.Entity("BookStore.API.Models.Entities.ChiTietHoaDon", b =>
                 {
                     b.HasOne("BookStore.API.Models.Entities.HoaDon", "HoaDon")
@@ -761,7 +780,7 @@ namespace BookStore.API.Migrations
 
             modelBuilder.Entity("BookStore.API.Models.Entities.PhieuNhap", b =>
                 {
-                    b.HasOne("BookStore.API.Models.Entities.NhaCungCap", "NhaCungCap")
+                    b.HasOne("BookStore.API.Models.NhaCungCap", "NhaCungCap")
                         .WithMany()
                         .HasForeignKey("MaNhaCungCap")
                         .OnDelete(DeleteBehavior.Cascade)

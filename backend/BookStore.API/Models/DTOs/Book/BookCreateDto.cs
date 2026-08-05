@@ -1,8 +1,28 @@
+using System.Text.Json.Serialization;
+
 namespace BookStore.API.Models.DTOs.Book;
 
 public class BookCreateDto
 {
-    public string Id { get; set; } = string.Empty;
+    // 🌟 Bọc tất cả các kiểu tên biến mà React có thể gửi lên
+    [JsonPropertyName("bookId")]
+    public string? BookId { get; set; }
+
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("MASACH")]
+    public string? MaSach { get; set; }
+
+    // Hàm tự động trích xuất mã do người dùng nhập
+    public string GetEffectiveId()
+    {
+        if (!string.IsNullOrWhiteSpace(BookId)) return BookId.Trim();
+        if (!string.IsNullOrWhiteSpace(Id)) return Id.Trim();
+        if (!string.IsNullOrWhiteSpace(MaSach)) return MaSach.Trim();
+        return string.Empty;
+    }
+
     public string Title { get; set; } = string.Empty;
     public string Author { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -13,10 +33,6 @@ public class BookCreateDto
 
     public int Discount { get; set; } 
     public string? MaNhaCungCap { get; set; } 
-
-    // =====================================
-    // ĐÃ BỔ SUNG: Dòng này sẽ sửa lỗi gạch đỏ
-    // =====================================
     public string? Supplier { get; set; } 
 
     public string? Translator { get; set; }
@@ -41,10 +57,6 @@ public class BookUpdateDto
 
     public int Discount { get; set; } 
     public string? MaNhaCungCap { get; set; } 
-
-    // =====================================
-    // ĐÃ BỔ SUNG: Dòng này sẽ sửa lỗi gạch đỏ
-    // =====================================
     public string? Supplier { get; set; } 
 
     public string? Translator { get; set; }

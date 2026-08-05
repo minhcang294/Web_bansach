@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaEye, FaTimes, FaTrashAlt } from 'react-icons/fa';
+import { FaSearch, FaEye, FaTimes } from 'react-icons/fa'; // Đã xóa FaTrashAlt
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
@@ -75,30 +75,6 @@ const OrderManagement = () => {
     } catch (error) {
       console.error("Lỗi:", error);
       alert('Có lỗi xảy ra.');
-    }
-  };
-
-  const handleDeleteOrder = async (orderId) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn XÓA đơn hàng ${orderId} này không? Hành động này không thể hoàn tác!`)) return;
-
-    try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
-        method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json' 
-        }
-      });
-      
-      if (response.ok) {
-        alert('Xóa đơn hàng thành công!');
-        fetchOrders(); 
-      } else {
-        alert('Xóa thất bại! Đơn hàng có thể đang bị ràng buộc dữ liệu.');
-      }
-    } catch (error) {
-      console.error("Lỗi xóa đơn hàng:", error);
-      alert('Có lỗi xảy ra khi xóa.');
     }
   };
 
@@ -228,7 +204,6 @@ const OrderManagement = () => {
                 const customer = order.customerName || order.CustomerName || order.fullName || 'Đang cập nhật...';
                 const phone = order.phone || order.phoneNumber || order.PhoneNumber || '';
                 const cleanStatus = order.status ? order.status.trim() : '';
-                const isPending = cleanStatus === 'ChoXuLy' || cleanStatus === 'Chờ xử lý';
                 const isCancelled = cleanStatus === 'DaHuy' || cleanStatus === 'Đã hủy';
                 
                 return (
@@ -249,31 +224,22 @@ const OrderManagement = () => {
                     </td>
                     
                     <td style={{ padding: '15px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
+                        
                         <button 
                           onClick={() => handleViewDetail(order)}
                           title="Xem chi tiết"
-                          style={{ backgroundColor: '#17a2b8', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', width: 'fit-content' }}
+                          style={{ backgroundColor: '#17a2b8', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                         >
                           <FaEye />
                         </button>
-
-                        {isPending && (
-                          <button 
-                            onClick={() => handleDeleteOrder(order.id)}
-                            title="Xóa đơn hàng"
-                            style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', width: 'fit-content' }}
-                          >
-                            <FaTrashAlt />
-                          </button>
-                        )}
 
                         <select 
                           onChange={(e) => handleUpdateStatus(order.id, e.target.value)} 
                           value={order.status}
                           disabled={isCancelled}
                           style={{ 
-                            padding: '6px', 
+                            padding: '6px 10px', 
                             borderRadius: '4px', 
                             border: '1px solid #ccc', 
                             outline: 'none', 

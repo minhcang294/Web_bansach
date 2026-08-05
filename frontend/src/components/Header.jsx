@@ -10,6 +10,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = () => {
     if (logout) logout();
@@ -29,35 +30,21 @@ export default function Header() {
         /* ================= CÁC KHỐI CHUNG ================= */
         .kd-topbar { background-color: #f5f5f5; border-bottom: 1px solid #ebebeb; padding: 8px 0; font-size: 13px; }
         
-        /* ================= ĐÃ THÊM: SỬA LỖI HOVER BỊ ĐỎ ================= */
         .topbar-admin-link { transition: all 0.2s; }
-        .topbar-admin-link:hover {
-          color: #3498db !important; /* Ép buộc giữ màu xanh nguyên bản */
-          opacity: 0.7; /* Làm mờ nhẹ một chút khi hover để có cảm giác bấm */
-        }
+        .topbar-admin-link:hover { color: #3498db !important; opacity: 0.7; }
         
         /* ================= THANH MENU ĐỎ CHÍNH ================= */
         .kd-navbar-red { background-color: #e71a22; color: #fff; }
         .nav-red-container { display: flex; align-items: center; gap: 30px; }
 
-        /* Nút Danh Mục Sách trong thanh đỏ */
         .kd-dropdown { position: relative; }
         .btn-category-toggle {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          cursor: pointer;
-          background-color: #cc151e; 
-          padding: 12px 20px;
-          color: #fff;
-          font-weight: 700;
-          font-size: 15px;
-          text-transform: uppercase;
-          transition: background 0.2s;
+          display: flex; align-items: center; gap: 10px; cursor: pointer;
+          background-color: #cc151e; padding: 12px 20px; color: #fff;
+          font-weight: 700; font-size: 15px; text-transform: uppercase; transition: background 0.2s;
         }
         .btn-category-toggle:hover { background-color: #b31219; }
 
-        /* Các Link Menu nằm trên thanh đỏ */
         .nav-links-red { display: flex; gap: 25px; align-items: center; }
         .nav-links-red a {
           color: #fff; text-decoration: none; font-weight: 600; font-size: 15px;
@@ -73,7 +60,7 @@ export default function Header() {
           border-radius: 0 0 8px 8px; padding: 30px;
           border: 1px solid #eee; border-top: none;
         }
-        .kd-dropdown:hover .kd-dropdown-content { display: block; animation: fadeIn 0.15s ease-in-out; }
+        .kd-dropdown:hover .kd-dropdown-content, .kd-dropdown-content.show { display: block; animation: fadeIn 0.15s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .mega-menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
@@ -88,13 +75,47 @@ export default function Header() {
         }
         .mega-category a:hover { color: #e71a22 !important; transform: translateX(5px); }
         .highlight-item { color: #e71a22 !important; font-weight: 600 !important; }
+
+        /* ================= GHI ĐÈ CSS CHO TABLET VÀ ĐIỆN THOẠI ================= */
+        @media (max-width: 992px) {
+          .kd-dropdown-content { width: 100% !important; padding: 20px !important; left: 0; }
+          .mega-menu-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .nav-links-red { display: none !important; } 
+          .nav-red-container { gap: 0 !important; }
+        }
+
+        @media (max-width: 768px) {
+          .topbar-container { flex-direction: column !important; align-items: center !important; gap: 8px !important; }
+          .topbar-greeting { display: none !important; }
+
+          /* Đã đổi tên class thành kd-main-header, kd-logo-wrapper... để chống xung đột Admin CSS */
+          .kd-main-header { flex-direction: column !important; padding: 12px 0 !important; gap: 15px !important; }
+          .kd-logo-wrapper, .kd-search-box-container, .kd-actions-box { 
+            flex: unset !important; width: 100% !important; justify-content: center !important; 
+          }
+          
+          .kd-search-box-container > div { max-width: 100% !important; }
+          
+          .kd-actions-box { gap: 40px !important; }
+          .action-text { display: none !important; } 
+          .cart-icon-wrapper { position: relative; }
+          .cart-badge {
+            position: absolute; top: -8px; right: -12px; background: #e71a22; color: #fff;
+            font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 20px; border: 2px solid #fff;
+            display: block !important;
+          }
+
+          .btn-category-toggle { justify-content: center !important; }
+          .mega-menu-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+          .kd-dropdown-content { max-height: 60vh !important; overflow-y: auto !important; padding: 15px !important; }
+        }
       `}</style>
 
       {/* ================= 1. TOPBAR ================= */}
       <div className="kd-topbar">
-        <div className="container" style={{ display: "flex", justifyContent: "space-between", color: "#555" }}>
+        <div className="container topbar-container" style={{ display: "flex", justifyContent: "space-between", color: "#555" }}>
           
-          <div style={{ fontWeight: "500", display: "flex", alignItems: "center" }}>
+          <div className="topbar-greeting" style={{ fontWeight: "500", display: "flex", alignItems: "center" }}>
             <span>Chào mừng bạn đến với <strong style={{ color: "#e71a22", letterSpacing: "0.5px" }}>BookGalaxy</strong></span>
           </div>
           
@@ -123,10 +144,10 @@ export default function Header() {
       </div>
 
       {/* ================= 2. MAIN HEADER ================= */}
-      <div className="container" style={{ display: "flex", alignItems: "center", padding: "20px 0" }}>
+      <div className="container kd-main-header" style={{ display: "flex", alignItems: "center", padding: "20px 0" }}>
         
         {/* KHỐI 1: LOGO */}
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
+        <div className="kd-logo-wrapper" style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
           <Link to="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "28px", fontWeight: "900", letterSpacing: "1px", textTransform: "uppercase" }}>
               <span style={{ color: "#333" }}>BOOK</span>
@@ -136,18 +157,12 @@ export default function Header() {
         </div>
 
         {/* KHỐI 2: Ô TÌM KIẾM */}
-        <div style={{ flex: 2, display: "flex", justifyContent: "center" }}>
+        <div className="kd-search-box-container" style={{ flex: 2, display: "flex", justifyContent: "center" }}>
           <div 
             style={{ 
-              display: "flex", 
-              flexDirection: "row",
-              width: "100%", 
-              maxWidth: "600px", 
-              height: "44px", 
-              borderRadius: "6px", 
-              border: "2px solid #e71a22", 
-              overflow: "hidden", 
-              backgroundColor: "#fff" 
+              display: "flex", flexDirection: "row", width: "100%", maxWidth: "600px", 
+              height: "44px", borderRadius: "6px", border: "2px solid #e71a22", 
+              overflow: "hidden", backgroundColor: "#fff" 
             }}
           >
             <input 
@@ -163,18 +178,9 @@ export default function Header() {
               onClick={handleSearch}
               title="Tìm kiếm"
               style={{ 
-                width: "50px", 
-                height: "100%", 
-                backgroundColor: "transparent", 
-                color: "#e71a22", 
-                border: "none", 
-                cursor: "pointer", 
-                fontSize: "18px",
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                padding: 0,
-                margin: 0
+                width: "50px", height: "100%", backgroundColor: "transparent", color: "#e71a22", 
+                border: "none", cursor: "pointer", fontSize: "18px", display: "flex", 
+                alignItems: "center", justifyContent: "center", padding: 0, margin: 0
               }}
             >
               <FaSearch />
@@ -183,18 +189,21 @@ export default function Header() {
         </div>
 
         {/* KHỐI 3: ACTIONS */}
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: "25px" }}>
+        <div className="kd-actions-box" style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: "25px" }}>
           <Link to="/orders" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", color: "#333" }}>
             <FaClipboardList size={26} color="#666" />
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div className="action-text" style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontSize: "12px", color: "#777", fontWeight: "normal", lineHeight: 1 }}>Theo dõi</span>
               <span style={{ fontSize: "14px", fontWeight: "600", lineHeight: 1.2 }}>Đơn hàng</span>
             </div>
           </Link>
           
           <Link to="/cart" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", color: "#333" }}>
-            <FaShoppingCart size={26} color="#666" />
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div className="cart-icon-wrapper">
+              <FaShoppingCart size={26} color="#666" />
+              <span className="cart-badge" style={{ display: "none" }}>{cart?.totalQuantity || 0}</span>
+            </div>
+            <div className="action-text" style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontSize: "12px", color: "#777", fontWeight: "normal", lineHeight: 1 }}>Giỏ hàng</span>
               <span style={{ fontSize: "14px", fontWeight: "700", lineHeight: 1.2, color: "#e71a22" }}>{cart?.totalQuantity || 0} sản phẩm</span>
             </div>
@@ -208,15 +217,15 @@ export default function Header() {
         <div className="container nav-red-container">
           
           {/* NÚT MEGA MENU DANH MỤC */}
-          <div className="kd-dropdown">
-            <div className="btn-category-toggle">
+          <div className="kd-dropdown" onMouseLeave={() => setIsMenuOpen(false)}>
+            <div className="btn-category-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <FaBars size={18} />
               <span>Danh Mục Sách</span>
               <FaChevronDown size={14} style={{ marginLeft: "4px" }} />
             </div>
             
             {/* KHUNG NỘI DUNG MEGA MENU */}
-            <div className="kd-dropdown-content">
+            <div className={`kd-dropdown-content ${isMenuOpen ? "show" : ""}`}>
               <div className="mega-menu-grid">
                 <div>
                   <div className="mega-category">
@@ -265,7 +274,6 @@ export default function Header() {
                     <Link to="/books?type=sach-moi" className="highlight-item">Sách Mới ♥</Link>
                     <Link to="/books?type=manga-moi" className="highlight-item">Manga Mới ♥</Link>
                     <Link to="/books?type=light-novel-moi" className="highlight-item">Light Novel Mới ♥</Link>
-                    
                     <Link to="/books?type=ban-chay" className="highlight-item">Sách Bán Chạy ♥</Link>
                   </div>
                 </div>

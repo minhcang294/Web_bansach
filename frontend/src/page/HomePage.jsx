@@ -38,22 +38,94 @@ export default function HomePage() {
   return (
     <div className="home-page">
       
-      {/* ================= ĐÃ THÊM: FIX LỖI HOVER NÚT DANH MỤC ================= */}
+      {/* ================= CSS RESPONSIVE (MÁY TÍNH & ĐIỆN THOẠI) ================= */}
       <style>{`
+        /* --- 1. Hiệu ứng hover Danh mục (Của bạn) --- */
         .category-item {
-          transition: all 0.3s ease; /* Thêm hiệu ứng chuyển đổi mượt mà */
+          transition: all 0.3s ease;
+          padding: 15px;
+          text-align: center;
+          border: 1px solid #eee;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 500;
         }
         .category-item:hover {
-          background-color: #e71a22 !important; /* Ép nền đỏ */
-          color: #ffffff !important;            /* Ép chữ màu trắng để đọc được */
-          border-color: #e71a22 !important;     /* Đổi viền sang đỏ cho đồng bộ */
-          box-shadow: 0 4px 10px rgba(231, 26, 34, 0.2); /* Thêm bóng đổ nhẹ cho nút nổi lên */
+          background-color: #e71a22 !important; 
+          color: #ffffff !important;            
+          border-color: #e71a22 !important;     
+          box-shadow: 0 4px 10px rgba(231, 26, 34, 0.2); 
+        }
+
+        /* --- 2. Tiêu đề các mục (Section Title) --- */
+        .section-title {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #e71a22;
+          padding-bottom: 10px;
+        }
+        .section-title h2 { margin: 0; font-size: 22px; text-transform: uppercase; color: #333; }
+        .section-title a { color: #e71a22; text-decoration: none; font-weight: 600; font-size: 14px; }
+
+        /* --- 3. Bố cục dạng lưới (Grid) chuẩn cho Desktop --- */
+        .service-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr); /* 4 cột */
+          gap: 20px;
+          padding: 30px 0;
+        }
+        .service-item {
+          display: flex; align-items: center; gap: 15px; 
+          padding: 15px; border: 1px solid #eee; border-radius: 8px;
+        }
+        .service-item svg { font-size: 30px; color: #e71a22; flex-shrink: 0; }
+        .service-item h4 { margin: 0 0 5px 0; font-size: 15px; }
+        .service-item p { margin: 0; font-size: 13px; color: #777; }
+
+        .category-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr); /* 4 cột */
+          gap: 15px;
+          margin-bottom: 40px;
+        }
+
+        .book-grid {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr); /* 5 cuốn 1 hàng */
+          gap: 20px;
+          margin-bottom: 40px;
+        }
+
+        /* ================= ÉP KIỂU CHO MÁY TÍNH BẢNG (TABLET) ================= */
+        @media (max-width: 992px) {
+          .book-grid { grid-template-columns: repeat(3, 1fr) !important; } /* 3 cuốn/hàng */
+          .category-grid { grid-template-columns: repeat(3, 1fr) !important; }
+          .service-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 15px; }
+        }
+
+        /* ================= ÉP KIỂU CHO ĐIỆN THOẠI (MOBILE) ================= */
+        @media (max-width: 768px) {
+          .section-title h2 { font-size: 16px; } /* Thu nhỏ chữ tiêu đề */
+          .section-title a { font-size: 12px; }
+          
+          /* Lưới Điện thoại: 2 cột như Shopee/Tiki */
+          .book-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .category-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          
+          .service-grid { grid-template-columns: repeat(1, 1fr) !important; gap: 10px; padding: 20px 0; }
+          .service-item { padding: 10px; }
+          .service-item svg { font-size: 24px; }
+          
+          /* Khoảng cách các section gọn lại */
+          .hero-section { margin-bottom: 20px !important; }
+          .book-section { margin-bottom: 20px !important; }
         }
       `}</style>
 
-     {/* ================= HERO ================= */}
-      {/* ĐÃ SỬA: Đổi margin-top thành 0 để dính sát vào menu đỏ */}
-      <section style={{ margin: "0 0 50px 0" }}>
+      {/* ================= HERO ================= */}
+      <section className="hero-section" style={{ margin: "0 0 40px 0" }}>
         <div className="container">
           
           {/* BANNER TỰ ĐỘNG CHUYỂN */}
@@ -62,7 +134,7 @@ export default function HomePage() {
               display: "grid", 
               position: "relative", 
               overflow: "hidden", 
-              borderRadius: "0 0 12px 12px", // Chỉ bo góc dưới, góc trên vuông vức dính vào menu
+              borderRadius: "0 0 12px 12px", 
               width: "100%",
               boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
             }}
@@ -76,7 +148,7 @@ export default function HomePage() {
                   gridArea: "1 / 1", 
                   width: "100%",
                   height: "auto",    
-                  objectFit: "contain", 
+                  objectFit: "cover", /* Đổi thành cover để banner đẹp hơn trên mọi màn hình */
                   opacity: currentSlide === index ? 1 : 0,
                   transition: "opacity 0.8s ease-in-out", 
                   zIndex: currentSlide === index ? 1 : 0
@@ -178,12 +250,12 @@ export default function HomePage() {
       </section>
 
       {/* ================= PROMOTION ================= */}
-      <section className="promo-banner">
+      <section className="promo-banner" style={{ marginBottom: "40px" }}>
         <div className="container">
           <img 
             src="/promo.jpg" 
             alt="Khuyến mãi" 
-            style={{ width: "100%", height: "auto" }} 
+            style={{ width: "100%", height: "auto", borderRadius: "12px", boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }} 
             onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} 
           />
         </div>

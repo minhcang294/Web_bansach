@@ -40,10 +40,12 @@ public class BookService : IBookService
 
     public async Task<BookDto> CreateAsync(BookCreateDto dto)
     {
-        // Ưu tiên lấy mã sách từ Frontend gửi xuống, nếu để trống mới tự sinh mã
-        var maSach = string.IsNullOrWhiteSpace(dto.Id) 
+        // 🌟 Gọi hàm GetEffectiveId() để bắt trọn mã người dùng nhập từ Frontend
+        string inputId = dto.GetEffectiveId();
+        
+        var maSach = string.IsNullOrWhiteSpace(inputId) 
             ? "S" + DateTime.UtcNow.Ticks.ToString()[^9..] 
-            : dto.Id;
+            : inputId;
 
         var sach = new Sach
         {
@@ -55,13 +57,9 @@ public class BookService : IBookService
             SoLuongTon = dto.StockQuantity,
             AnhSach = dto.ImageUrl,
             
-            // ==========================================
-            // [ĐÃ BỔ SUNG] 2 TRƯỜNG QUAN TRỌNG
-            // ==========================================
             GiamGia = dto.Discount,
             MaNhaCungCap = dto.MaNhaCungCap,
             
-            // THÔNG TIN BỔ SUNG
             NhaCungCap = dto.Supplier,
             NguoiDich = dto.Translator,
             NhaXuatBan = dto.Publisher,
@@ -90,13 +88,9 @@ public class BookService : IBookService
         sach.SoLuongTon = dto.StockQuantity;
         sach.AnhSach = dto.ImageUrl;
 
-        // ==========================================
-        // [ĐÃ BỔ SUNG] 2 TRƯỜNG QUAN TRỌNG
-        // ==========================================
         sach.GiamGia = dto.Discount;
         sach.MaNhaCungCap = dto.MaNhaCungCap;
 
-        // THÔNG TIN BỔ SUNG
         sach.NhaCungCap = dto.Supplier;
         sach.NguoiDich = dto.Translator;
         sach.NhaXuatBan = dto.Publisher;
@@ -124,9 +118,6 @@ public class BookService : IBookService
             Description = s.NoiDungDemo ?? "",
             Price = s.GiaBan,
             
-            // ==========================================
-            // [ĐÃ BỔ SUNG] 2 TRƯỜNG QUAN TRỌNG
-            // ==========================================
             Discount = s.GiamGia,
             MaNhaCungCap = s.MaNhaCungCap,
             
@@ -135,7 +126,6 @@ public class BookService : IBookService
             CategoryId = firstCategory?.MaDanhMuc ?? "",
             CategoryName = firstCategory?.TenDanhMuc ?? "",
 
-            // THÔNG TIN BỔ SUNG
             Supplier = s.NhaCungCap,
             Translator = s.NguoiDich,
             Publisher = s.NhaXuatBan,

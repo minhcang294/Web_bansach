@@ -33,3 +33,8 @@ cd backend/BookStore.API
 dotnet ef migrations add AddActivityLogTable
 
 dotnet ef database update
+
+
+git add .
+git commit -m "Hoàn thiện luồng Auth, thêm Quản lý Nhà Cung Cấp và chuẩn hóa ERD/Database"
+git push

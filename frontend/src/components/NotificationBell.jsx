@@ -8,6 +8,9 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const connectionRef = useRef(null);
 
+  // Lấy đường dẫn API gốc từ biến môi trường (dành cho Vite), mặc định dùng localhost khi code ở máy
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
   // Hàm hỗ trợ lấy danh sách ID đã đọc từ LocalStorage
   const getReadIds = () => JSON.parse(localStorage.getItem('readNotifIds') || '[]');
 
@@ -15,17 +18,22 @@ export default function NotificationBell() {
   // 🌟 MẢNH GHÉP 1: TẢI LỊCH SỬ VÀ KIỂM TRA XEM ĐÃ ĐỌC CHƯA
   // =================================================================
   useEffect(() => {
+    let isMounted = true; // Cờ kiểm tra để tránh lỗi memory leak khi chuyển trang
+
     const fetchOldNotifications = async () => {
       try {
         const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-        const response = await fetch("http://localhost:5000/api/ActivityLogs", {
+        const response = await fetch(`${API_BASE_URL}/api/ActivityLogs`, {
           method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+          headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json' 
+          }
         }); 
         
-        if (response.ok) {
+        if (response.ok && isMounted) {
           const data = await response.json();
-          const readIds = getReadIds(); // Lấy danh sách ID đã đọc từ bộ nhớ
+          const readIds = getReadIds(); 
           
           const formattedHistory = data.slice(0, 20).map(item => {
             const notifId = (item.id || item.Id || Math.random()).toString();
@@ -35,7 +43,7 @@ export default function NotificationBell() {
               title: item.entityType || item.EntityType || 'Hệ thống',
               message: item.details || item.Details || '',
               time: item.timestamp || item.Timestamp || item.createdAt || 'Gần đây',
-              isRead: readIds.includes(notifId) // Kiểm tra xem ID này đã nằm trong danh sách đọc chưa
+              isRead: readIds.includes(notifId) 
             };
           });
 
@@ -47,57 +55,72 @@ export default function NotificationBell() {
     };
 
     fetchOldNotifications();
-  }, []);
+    
+    // Dọn dẹp khi Component bị tắt
+    return () => { isMounted = false; };
+  }, [API_BASE_URL]);
 
   // =================================================================
-  // 🌟 MẢNH GHÉP 2: KẾT NỐI SIGNALR NHẬN THÔNG BÁO MỚI
+  // 🌟 MẢNH GHÉP 2: KẾT NỐI SIGNALR NHẬN THÔNG BÁO MỚI (ĐÃ FIX LỖI ĐỎ)
   // =================================================================
   useEffect(() => {
     if (connectionRef.current) return;
 
+    let isMounted = true; 
+
+    // Cấu hình SignalR
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5000/notificationHub")
-      .withAutomaticReconnect()
+      .withUrl(`${API_BASE_URL}/notificationHub`)
+      .withAutomaticReconnect() 
       .build();
 
     connectionRef.current = connection;
 
+    // Lắng nghe sự kiện có thông báo mới từ Backend C#
     connection.on("ReceiveNotification", (incomingNotif) => {
       const notifId = (incomingNotif.id || incomingNotif.Id || Date.now()).toString();
       const formattedNotif = {
         id: notifId,
         type: incomingNotif.type || incomingNotif.Type || 'order',
-        title: incomingNotif.title || incomingNotif.Title || 'Có đơn hàng mới',
+        title: incomingNotif.title || incomingNotif.Title || 'Có thông báo mới',
         message: incomingNotif.message || incomingNotif.Message || '',
         time: incomingNotif.time || incomingNotif.Time || 'Vừa xong',
         isRead: false
       };
 
-      setNotifications(prev => [formattedNotif, ...prev]);
+      if (isMounted) {
+        setNotifications(prev => [formattedNotif, ...prev]);
+      }
     });
 
-    const startHubConnection = async () => {
+    // Hàm khởi động an toàn, lọc bỏ lỗi đỏ do React StrictMode gây ra
+    const startSignalR = async () => {
       try {
-        if (connection.state === signalR.HubConnectionState.Disconnected) {
-          await connection.start();
+        await connection.start();
+      } catch (err) {
+        if (isMounted && err.message !== "The connection was stopped during negotiation.") {
+          console.error("Lỗi kết nối SignalR:", err);
         }
-      } catch (error) {
-        setTimeout(startHubConnection, 3000);
       }
     };
 
-    startHubConnection();
+    startSignalR();
 
     return () => {
+      isMounted = false;
       if (connectionRef.current) {
         connectionRef.current.stop();
         connectionRef.current = null;
       }
     };
-  }, []);
+  }, [API_BASE_URL]);
 
+  // Tính tổng số thông báo chưa đọc
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  // =================================================================
+  // 🌟 XỬ LÝ SỰ KIỆN CLICK RA NGOÀI ĐỂ ĐÓNG BẢNG THÔNG BÁO
+  // =================================================================
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -116,7 +139,6 @@ export default function NotificationBell() {
   const markAllAsRead = () => {
     const allIds = notifications.map(n => n.id.toString());
     const currentReadIds = getReadIds();
-    // Gộp ID cũ và mới, loại bỏ trùng lặp
     const newReadIds = [...new Set([...currentReadIds, ...allIds])]; 
     localStorage.setItem('readNotifIds', JSON.stringify(newReadIds));
 
@@ -128,18 +150,17 @@ export default function NotificationBell() {
     const stringId = id.toString();
     const currentReadIds = getReadIds();
     
-    // Nếu chưa đọc thì thêm vào bộ nhớ
     if (!currentReadIds.includes(stringId)) {
       currentReadIds.push(stringId);
       localStorage.setItem('readNotifIds', JSON.stringify(currentReadIds));
     }
 
-    // Cập nhật lại giao diện ngay lập tức
     setNotifications(notifications.map(n => 
       n.id === id ? { ...n, isRead: true } : n
     ));
   };
 
+  // Chọn icon màu sắc tương ứng
   const getIconForType = (type) => {
     switch (type) {
       case 'order': return <div style={{ backgroundColor: '#e0f2fe', color: '#0284c7', padding: '10px', borderRadius: '50%' }}><FaBoxOpen size={16} /></div>;
@@ -149,6 +170,9 @@ export default function NotificationBell() {
     }
   };
 
+  // =================================================================
+  // 🌟 GIAO DIỆN HIỂN THỊ
+  // =================================================================
   return (
     <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
       <button 
@@ -200,6 +224,7 @@ export default function NotificationBell() {
           <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
             {notifications.length > 0 ? (
               notifications.map((notif) => {
+                // Xử lý hiển thị thời gian
                 let displayTime = notif.time;
                 try {
                   if (notif.time !== 'Vừa xong' && notif.time !== 'Gần đây') {
@@ -213,7 +238,7 @@ export default function NotificationBell() {
                 return (
                   <div 
                     key={notif.id} 
-                    onClick={() => markAsRead(notif.id)} // <--- THÊM SỰ KIỆN CLICK VÀO ĐÂY
+                    onClick={() => markAsRead(notif.id)}
                     style={{ 
                       display: 'flex', gap: '15px', padding: '15px', borderBottom: '1px solid #f3f4f6',
                       backgroundColor: notif.isRead ? 'white' : '#f0f9ff', cursor: 'pointer', transition: '0.2s'
