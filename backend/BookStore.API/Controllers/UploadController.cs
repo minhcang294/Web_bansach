@@ -20,8 +20,9 @@ namespace BookStore.API.Controllers
         }
 
         [HttpPost]
-        // ĐÃ FIX 2: Thêm [FromForm] để C# biết phải lấy dữ liệu từ Form Data
-        public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
+        [Consumes("multipart/form-data")] // ĐÃ FIX 2: Thêm dòng này để Swagger vẽ nút Upload File chuẩn xác
+        // ĐÃ GỠ BỎ: [FromForm] vì .NET tự hiểu IFormFile, để lại sẽ làm sập Swagger
+        public async Task<IActionResult> UploadImage(IFormFile file) 
         {
             if (file == null || file.Length == 0)
             {

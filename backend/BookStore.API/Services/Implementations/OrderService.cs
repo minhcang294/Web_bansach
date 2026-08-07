@@ -50,7 +50,7 @@ public class OrderService : IOrderService
             MaKhachHang = maKhachHang,
             MaNhanVien = null,      
             MaKhuyenMai = null,      
-            NgayDatHang = DateTime.UtcNow,
+            NgayDatHang = DateTime.Now,
             
             // 🌟 ÁNH XẠ DỮ LIỆU TỪ DTO VÀO ENTITY
             TenNguoiNhan = dto.CustomerName ?? "",

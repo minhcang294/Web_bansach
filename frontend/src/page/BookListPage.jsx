@@ -195,7 +195,7 @@ export default function BookListPage() {
   }, [fetchBooks]);
 
   const getPageTitle = () => {
-    if (typeParam === "sale") return "🔥 Khuyến Mãi Hót";
+    if (typeParam === "sale") return "🔥 Khuyến Mãi HOT";
     if (typeParam === "old") return "🏷️ Kho Sách Cũ";
     if (keyword) return `Kết quả tìm kiếm: "${keyword}"`;
     
