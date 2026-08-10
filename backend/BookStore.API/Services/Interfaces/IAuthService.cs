@@ -24,6 +24,7 @@ public interface IAuthService
 
     // 👇 BỔ SUNG DÒNG NÀY ĐỂ HẾT LỖI ĐỎ NÚT KHÓA/MỞ KHÓA TÀI KHOẢN
     Task ToggleUserStatusAsync(string userId);
+   
 }
 
 // Class Exception để xử lý lỗi nghiệp vụ

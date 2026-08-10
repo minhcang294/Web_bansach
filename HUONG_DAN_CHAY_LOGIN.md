@@ -15,6 +15,8 @@ npm run dev
 
  SWAGGER
 http://localhost:5000/swagger/index.html
+
+DOCKER
 docker-compose down
 docker-compose up --build -d
 docker ps
@@ -36,5 +38,5 @@ dotnet ef database update
 
 
 git add .
-git commit -m "Hoàn thiện luồng Auth, thêm Quản lý Nhà Cung Cấp và chuẩn hóa ERD/Database"
+git commit -m ""
 git push

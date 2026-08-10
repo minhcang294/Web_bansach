@@ -266,16 +266,17 @@ GO
 -- ----- Sách -----
 INSERT INTO SACH (MASACH, TENSACH, TACGIA, GIABAN, GIAMGIA, SOLUONGTON, NOIDUNGDEMO, LOAISACH, NAMXUATBAN, SOTRANG, NGONNGU, ANHSACH, MANHACUNGCAP, NHAXUATBAN) VALUES
 ('S001', N'Nhà Giả Kim', N'Paulo Coelho', 79000, 10, 10, N'Hành trình đi tìm kho báu và ý nghĩa cuộc sống.', N'Văn học', 1988, 228, N'Tiếng Việt', '\Image\VANHOC\TIEUTHUYET\NHAGIAKIM.webp', 'NCC01', N'NXB Hội Nhà Văn'),
-('S002', N'Sword Art Online - Tập 1', N'Reki Kawahara', 85000, 0, 20, N'Trận chiến sinh tồn trong thế giới ảo.', N'Văn học', 2009, 250, N'Tiếng Việt', 'https://placehold.co/300x420/e71a22/FFF?text=SAO+1', 'NCC03', N'IPM'),
-('S003', N'Bên Nhau Trọn Đời', N'Cố Mạn', 65000, 10, 4, N'Câu chuyện tình yêu đầy lãng mạn.', N'Văn học', 2010, 300, N'Tiếng Việt', 'https://placehold.co/300x420/e71a22/FFF?text=SAO+1', 'NCC01', N'NXB Văn Học'),
-('S004', N'Đắc Nhân Tâm', N'Dale Carnegie', 86000, 10, 15, N'Nghệ thuật đối nhân xử thế kinh điển mọi thời đại.', N'Kỹ năng', 1936, 320, N'Tiếng Việt', '\Image\KYNANG\KYNANGSONG\DACNHANTAM.gif', 'NCC01', N'First News'),
-('S005', N'Tuổi Trẻ Đáng Giá Bao Nhiêu', N'Rosie Nguyễn', 72000, 0, 20, N'Cuốn sách truyền cảm hứng dành cho người trẻ Việt Nam.', N'Kỹ năng', 2016, 250, N'Tiếng Việt', 'https://placehold.co/300x420/cc151e/FFF?text=Tuoi+Tre', 'NCC03', N'Nhã Nam'),
-('S006', N'Cha Giàu Cha Nghèo', N'Robert Kiyosaki', 95000, 10, 30, N'Nền tảng tư duy tài chính thay đổi cuộc đời.', N'Kinh tế', 1997, 336, N'Tiếng Việt', 'https://placehold.co/300x420/b31219/FFF?text=Cha+Giau+Cha+Ngheo', 'NCC03', N'NXB Trẻ'),
-('S007', N'Tiếp Thị 4.0', N'Philip Kotler', 119000, 0, 10, N'Xu hướng marketing trong kỷ nguyên số.', N'Kinh tế', 2017, 280, N'Tiếng Việt', 'https://placehold.co/300x420/b31219/FFF?text=Marketing+4.0', 'NCC03', N'NXB Trẻ'),
-('S008', N'Steve Jobs', N'Walter Isaacson', 199000, 0, 3, N'Tiểu sử về vị CEO huyền thoại của Apple.', N'Kinh tế', 2011, 650, N'Tiếng Việt', 'https://placehold.co/300x420/b31219/FFF?text=Steve+Jobs', 'NCC01', N'Alpha Books'),
-('S009', N'Doraemon - Tập 1', N'Fujiko F. Fujio', 25000, 10, 50, N'Bộ truyện tranh thiếu nhi kinh điển của Nhật Bản.', N'Thiếu nhi', 1969, 190, N'Tiếng Việt', 'https://placehold.co/300x420/ff4d4f/FFF?text=Doraemon', 'NCC02', N'NXB Kim Đồng'),
-('S010', N'Thám Tử Lừng Danh Conan', N'Gosho Aoyama', 25000, 0, 30, N'Truyện tranh trinh thám.', N'Thiếu nhi', 1994, 200, N'Tiếng Việt', 'https://placehold.co/300x420/ff4d4f/FFF?text=Conan', 'NCC02', N'NXB Kim Đồng'),
-('S011', N'One Piece - Đảo Hải Tặc', N'Eiichiro Oda', 25000, 0, 20, N'Truyện tranh phiêu lưu hài hước.', N'Thiếu nhi', 1997, 200, N'Tiếng Việt', 'https://placehold.co/300x420/ff4d4f/FFF?text=One+Piece', 'NCC02', N'NXB Kim Đồng');
+('S002', N'Chung Một Mái Nhà ', N'Reki Kawahara', 85000, 0, 20, N'Trận chiến sinh tồn trong thế giới ảo.', N'Văn học', 2009, 250, N'Tiếng Việt', '\Image\VANHOC\LightNovel\CHUNGMOTMAINHA.webp', 'NCC03', N'IPM'),
+('S003', N'Bến Xe', N'Cố Mạn', 65000, 10, 4, N'Câu chuyện tình yêu đầy lãng mạn.', N'Văn học', 2010, 300, N'Tiếng Việt', '\Image\VANHOC\NGONTINH\BENXE.webp', 'NCC01', N'NXB Văn Học'),
+('S004', N'Con Đường Chẳng Mấy Ai Đi ', N'Dale Carnegie', 86000, 10, 15, N'Nghệ thuật đối nhân xử thế kinh điển mọi thời đại.', N'Kỹ năng', 1936, 320, N'Tiếng Việt', '\Image\KYNANG\KYNANGSONG\CONDUONGCHANGMAYAIDI.webp', 'NCC01', N'First News'),
+('S005', N'Cách Để Trở Thành Cha Mẹ Tốt', N'Rosie Nguyễn', 72000, 0, 20, N'Cuốn sách truyền cảm hứng dành cho người trẻ Việt Nam.', N'Kỹ năng', 2016, 250, N'Tiếng Việt','\Image\KYNANG\SACHCHOTUOIMOILON\CACHDETROTHANHCHAMETOT.webp', 'NCC03', N'Nhã Nam'),
+('S006', N'Kinh Tế Việt Nam', N'Robert Kiyosaki', 95000, 10, 30, N'Nền tảng tư duy tài chính thay đổi cuộc đời.', N'Kinh tế', 1997, 336, N'Tiếng Việt', '\Image\KINHTE\PHANTICHKINHTE\KINHTEVIETNAM.webp', 'NCC03', N'NXB Trẻ'),
+('S007', N'Giải Trí Đến Chết', N'Philip Kotler', 119000, 0, 10, N'Xu hướng marketing trong kỷ nguyên số.', N'Kinh tế', 2017, 280, N'Tiếng Việt', '\Image\KINHTE\Marketing_BANHANG\GIAITRIDENCHET.webp', 'NCC03', N'NXB Trẻ'),
+('S008', N'AI Roadmap', N'Walter Isaacson', 199000, 0, 3, N'Tiểu sử về vị CEO huyền thoại của Apple.', N'Kinh tế', 2011, 650, N'Tiếng Việt', '\Image\KINHTE\QUANTRI_LANHDAO\AI Roadmap.webp', 'NCC01', N'Alpha Books'),
+('S009', N'Dan Dan Dan ', N'Fujiko F. Fujio', 25000, 10, 50, N'Bộ truyện tranh thiếu nhi kinh điển của Nhật Bản.', N'Thiếu nhi', 1969, 190, N'Tiếng Việt', '\Image\THIEUNHI\MagaComic\DAN DA DAN.webp', 'NCC02', N'NXB Kim Đồng'),
+('S010', N'Thám Tử Lừng Danh Conan', N'Gosho Aoyama', 25000, 0, 30, N'Truyện tranh trinh thám.', N'Thiếu nhi', 1994, 200, N'Tiếng Việt', '\Image\THIEUNHI\MagaComic\THAMTULUONGDANHCONAN.webp', 'NCC02', N'NXB Kim Đồng'),
+('S011', N'Mao', N'Eiichiro Oda', 25000, 0, 20, N'Truyện tranh phiêu lưu hài hước.', N'Thiếu nhi', 1997, 200, N'Tiếng Việt', '\Image\THIEUNHI\MagaComic\MAO.webp', 'NCC02', N'NXB Kim Đồng');
+
 GO
 
 -- ----- Gán sách vào danh mục -----
@@ -314,7 +315,6 @@ SELECT * FROM CHITIETPHIEUNHAP;
 SELECT * FROM HOADON;
 SELECT * FROM SACH;
 SELECT * FROM NHANVIEN;
-SELECT * FROM KHACHHANG;
 
 /*
 DROP TABLE IF EXISTS [__EFMigrationsHistory];
@@ -331,4 +331,16 @@ GO
 
 -- 3. Tạo lại database trống mới tinh
 CREATE DATABASE [BANSACH];
+GO*/
+
+/* BẢNG MIGRATIONS*/
+/*CREATE TABLE [ActivityLogs] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] nvarchar(max) NOT NULL,
+    [Action] nvarchar(max) NOT NULL,
+    [EntityType] nvarchar(max) NOT NULL,
+    [Details] nvarchar(max) NULL,
+    [Timestamp] datetime2 NOT NULL,
+    CONSTRAINT [PK_ActivityLogs] PRIMARY KEY ([Id])
+);
 GO*/

@@ -284,7 +284,7 @@ export default function Header() {
           {/* CÁC LINK ĐIỀU HƯỚNG TRÊN THANH ĐỎ */}
           <div className="nav-links-red">
             <Link to="/"><FaHome size={16} /> Trang Chủ</Link>
-            <Link to="/books?type=sale"><FaFire size={16} color="#ffda00" /> Khuyến Mãi Hót</Link>
+            <Link to="/books?type=sale"><FaFire size={16} color="#ffda00" /> Khuyến Mãi HOT</Link>
             <Link to="/about">
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#2ecc71', borderRadius: '50%', padding: '2px' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>

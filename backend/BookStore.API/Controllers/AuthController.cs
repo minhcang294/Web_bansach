@@ -4,6 +4,7 @@ using BookStore.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Google.Apis.Auth;
+using BookStore.API.Models.DTOs.Auth;
 
 namespace BookStore.API.Controllers;
 
