@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>BookStore.API</name>
+    </assembly>
+    <members>
+        <member name="M:BookStore.API.Controllers.AuthController.Login(BookStore.API.Models.DTOs.Auth.LoginDto)">
+            <summary>Đăng nhập bằng email + mật khẩu, trả về JWT token.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.AuthController.Register(BookStore.API.Models.DTOs.Auth.RegisterDto)">
+            <summary>Đăng ký tài khoản mới, trả về JWT token luôn (đăng nhập tự động sau đăng ký).</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.BooksController.GetAll(System.String,System.String,System.Int32,System.Int32)">
+            <summary>Danh sách sách - tìm kiếm, lọc theo danh mục, phân trang. Công khai.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.BooksController.GetById(System.String)">
+            <summary>Chi tiết 1 cuốn sách theo mã sách (MASACH). Công khai.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.BooksController.Create(BookStore.API.Models.DTOs.Book.BookCreateDto)">
+            <summary>Chỉ Admin được thêm sách mới.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.BooksController.Update(System.String,BookStore.API.Models.DTOs.Book.BookUpdateDto)">
+            <summary>Chỉ Admin được sửa sách.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.BooksController.Delete(System.String)">
+            <summary>Chỉ Admin được xóa sách.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.CartController.GetCart">
+            <summary>Xem giỏ hàng hiện tại của người dùng đang đăng nhập.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.CartController.AddToCart(BookStore.API.Models.DTOs.Cart.AddToCartDto)">
+            <summary>Thêm sách vào giỏ hàng (cộng dồn số lượng nếu đã có trong giỏ).</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.CartController.UpdateItem(System.Int32,BookStore.API.Models.DTOs.Cart.UpdateCartItemDto)">
+            <summary>Cập nhật số lượng 1 sản phẩm trong giỏ hàng.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.CartController.RemoveItem(System.Int32)">
+            <summary>Xóa 1 sản phẩm khỏi giỏ hàng.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.CategoriesController.GetAll">
+            <summary>Lấy toàn bộ danh mục sách.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.OrdersController.Create(BookStore.API.Models.DTOs.Order.OrderCreateDto)">
+            <summary>Tạo đơn hàng từ giỏ hàng hiện tại của user đang đăng nhập.</summary>
+        </member>
+        <member name="M:BookStore.API.Controllers.OrdersController.GetMyOrders">
+            <summary>Lịch sử đơn hàng của user đang đăng nhập.</summary>
+        </member>
+    </members>
+</doc>
