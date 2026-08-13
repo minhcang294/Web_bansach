@@ -14,13 +14,15 @@
     "@microsoft/signalr": "^10.0.0",
     "@react-oauth/google": "^0.13.5",
     "axios": "^1.7.7",
+    "file-saver": "^2.0.5",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.383.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.7.0",
     "react-router-dom": "^6.26.2",
-    "swiper": "^14.0.5"
+    "swiper": "^14.0.5",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
