@@ -66,12 +66,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     };
 });
 
-// 4. Cấu hình CORS (Cho phép ReactJS gọi API & kết nối WebSocket của SignalR)
+// 4. Cấu hình CORS (Cho phép mọi nguồn gọi API & kết nối WebSocket của SignalR)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+        policy.SetIsOriginAllowed(_ => true) // Cho phép tất cả các nguồn gọi (Localhost, IP AWS, Domain...)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -93,13 +93,12 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 6. 🌟 ĐÃ SỬA: Tự động Migrate để bổ sung các bảng còn thiếu (như ActivityLogs)
+// 6. Tự động Migrate để bổ sung các bảng còn thiếu
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     try 
     {
-        // Lệnh này sẽ tự so sánh Code C# và SQL Server, nếu thiếu bảng nó sẽ tự tạo
         db.Database.Migrate(); 
     }
     catch (Exception ex)
@@ -114,7 +113,7 @@ app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BookStore A
 
 app.UseHttpsRedirection();
 
-// Cấp phép CORS khi tải ảnh tĩnh từ wwwroot
+// Cấp phép CORS (Phải đặt trước UseAuthorization và MapControllers)
 app.UseCors("AllowAll"); 
 
 // Cho phép truy cập file tĩnh (hiển thị ảnh sách trong thư mục wwwroot)
