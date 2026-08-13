@@ -14,7 +14,7 @@ Chạy lệnh khởi động:
 npm run dev
 
  SWAGGER
-http://localhost:5000/swagger/index.html
+http://18.232.139.209:5000/swagger/index.html
 
 DOCKER
 docker-compose down
@@ -40,3 +40,9 @@ dotnet ef database update
 git add .
 git commit -m ""
 git push
+
+
+cập nhật filr .env
+git push
+aws 
+git pull

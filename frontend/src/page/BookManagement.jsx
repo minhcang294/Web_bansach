@@ -46,7 +46,7 @@ const BookManagement = () => {
 
   const fetchBooks = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/books');
+      const response = await fetch('http://18.232.139.209:5000/api/books');
       if (response.ok) {
         const data = await response.json();
         setBooks(data.items || data || []);
@@ -56,7 +56,7 @@ const BookManagement = () => {
 
   const fetchDanhMucs = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories'); 
+      const response = await fetch('http://18.232.139.209:5000/api/categories'); 
       if (response.ok) {
         const data = await response.json();
         setDanhMucs(data || []);
@@ -66,7 +66,7 @@ const BookManagement = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/NhaCungCap', {
+      const response = await fetch('http://18.232.139.209:5000/api/NhaCungCap', {
         headers: { 'Authorization': `Bearer ${getToken()}` }
       });
       if (response.ok) {
@@ -115,7 +115,7 @@ const BookManagement = () => {
     formData.append('file', file); 
 
     try {
-      const response = await fetch('http://localhost:5000/api/upload', {
+      const response = await fetch('http://18.232.139.209:5000/api/upload', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${getToken()}` },
         body: formData 
@@ -123,7 +123,7 @@ const BookManagement = () => {
 
       if (response.ok) {
         const data = await response.json();
-        const fullImageUrl = `http://localhost:5000${data.imageUrl}`;
+        const fullImageUrl = `http://18.232.139.209:5000${data.imageUrl}`;
         
         setNewBook({ ...newBook, imageUrl: fullImageUrl });
         alert("Đã tải ảnh lên thành công!");
@@ -190,7 +190,7 @@ const BookManagement = () => {
     };
 
     try {
-      const url = isEditing ? `http://localhost:5000/api/books/${newBook.id}` : 'http://localhost:5000/api/books';
+      const url = isEditing ? `http://18.232.139.209:5000/api/books/${newBook.id}` : 'http://18.232.139.209:5000/api/books';
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
@@ -214,7 +214,7 @@ const BookManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa cuốn sách này?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/books/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getToken()}` } });
+      const response = await fetch(`http://18.232.139.209:5000/api/books/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getToken()}` } });
       if (response.ok) { alert('Xóa thành công!'); fetchBooks(); } 
       else { alert('Xóa thất bại! Kiểm tra lại quyền Admin hoặc dữ liệu liên quan.'); }
     } catch (error) { console.error("Lỗi xóa sách:", error); }

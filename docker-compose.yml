@@ -25,7 +25,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:5000/api
+        VITE_API_URL: http://18.232.139.209:5000/api
     container_name: bookstore-frontend
     ports:
       - "3000:80"

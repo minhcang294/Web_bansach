@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // LƯU Ý: Hãy đảm bảo port API khớp với Backend của bạn (Mặc định 5000)
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://18.232.139.209:5000/api";
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,

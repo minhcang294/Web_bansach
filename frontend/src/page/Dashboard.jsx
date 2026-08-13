@@ -20,7 +20,7 @@ function BackupRestoreSection() {
 
   const fetchBackupFiles = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/Backup/files", {
+      const response = await fetch("http://18.232.139.209:5000/api/Backup/files", {
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
       if (response.ok) {
@@ -46,7 +46,7 @@ function BackupRestoreSection() {
     setMessage({ text: '', type: '' });
 
     try {
-      const response = await fetch("http://localhost:5000/api/Backup/backup", {
+      const response = await fetch("http://18.232.139.209:5000/api/Backup/backup", {
         method: "POST",
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
@@ -78,7 +78,7 @@ function BackupRestoreSection() {
     setMessage({ text: '', type: '' });
 
     try {
-      const response = await fetch("http://localhost:5000/api/Backup/restore", {
+      const response = await fetch("http://18.232.139.209:5000/api/Backup/restore", {
         method: "POST",
         headers: { 
           "Authorization": `Bearer ${getToken()}`,
@@ -242,7 +242,7 @@ export default function Dashboard() {
   const fetchWithFallback = async (urls, headers) => {
     for (const url of urls) {
       try {
-        const res = await fetch(`http://localhost:5000${url}`, { headers });
+        const res = await fetch(`http://18.232.139.209:5000${url}`, { headers });
         if (res.ok) {
           const data = await res.json();
           return Array.isArray(data) ? data : (data.items || data.data || data.$values || []);
