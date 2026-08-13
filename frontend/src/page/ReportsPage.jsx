@@ -32,7 +32,7 @@ export default function ReportsPage() {
   const fetchWithFallback = async (urls, headers) => {
     for (const url of urls) {
       try {
-        const res = await fetch(`http://18.232.139.209:5000${url}`, { headers });
+        const res = await fetch(`http://localhost:5000${url}`, { headers });
         if (res.ok) {
           const data = await res.json();
           return Array.isArray(data) ? data : (data.items || data.data || data.$values || []);

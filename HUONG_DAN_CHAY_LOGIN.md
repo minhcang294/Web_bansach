@@ -14,7 +14,7 @@ Chạy lệnh khởi động:
 npm run dev
 
  SWAGGER
-http://18.232.139.209:5000/swagger/index.html
+http://localhost:5000/swagger/index.html
 
 DOCKER
 docker-compose down

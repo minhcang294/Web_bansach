@@ -9,7 +9,7 @@ export default function NotificationBell() {
   const connectionRef = useRef(null);
 
   // Lấy đường dẫn API gốc từ biến môi trường (dành cho Vite), mặc định dùng localhost khi code ở máy
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://18.232.139.209:5000";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   // Hàm hỗ trợ lấy danh sách ID đã đọc từ LocalStorage
   const getReadIds = () => JSON.parse(localStorage.getItem('readNotifIds') || '[]');

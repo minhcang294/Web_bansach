@@ -14,7 +14,7 @@ services:
     build: ./backend/BookStore.API
     container_name: bookstore-backend
     ports:
-      - "5000:80"
+      - "5000:8080"
     depends_on:
       - sqlserver
     environment:

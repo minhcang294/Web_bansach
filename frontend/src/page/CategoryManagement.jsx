@@ -22,7 +22,7 @@ export default function CategoryManagement() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://18.232.139.209:5000/api/categories");
+      const res = await fetch("http://localhost:5000/api/categories");
       if (res.ok) {
         const data = await res.json();
         setCategories(Array.isArray(data) ? data : []);
@@ -69,8 +69,8 @@ export default function CategoryManagement() {
 
     try {
       const url = isEditing 
-        ? `http://18.232.139.209:5000/api/categories/${catId}` 
-        : "http://18.232.139.209:5000/api/categories";
+        ? `http://localhost:5000/api/categories/${catId}` 
+        : "http://localhost:5000/api/categories";
       
       const method = isEditing ? "PUT" : "POST";
 
@@ -101,7 +101,7 @@ export default function CategoryManagement() {
   const handleDeleteCategory = async (id) => {
     if (window.confirm(`Bạn có chắc muốn xóa danh mục mã: ${id} không?`)) {
       try {
-        const res = await fetch(`http://18.232.139.209:5000/api/categories/${id}`, {
+        const res = await fetch(`http://localhost:5000/api/categories/${id}`, {
           method: "DELETE",
           headers: { "Authorization": `Bearer ${getToken()}` }
         });

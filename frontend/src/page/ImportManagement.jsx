@@ -44,7 +44,7 @@ export default function ImportManagement() {
 
   const fetchImports = async () => {
     try {
-      const res = await fetch('http://18.232.139.209:5000/api/imports');
+      const res = await fetch('http://localhost:5000/api/imports');
       if (res.ok) {
         const data = await res.json();
         setImports(Array.isArray(data) ? data : []);
@@ -56,7 +56,7 @@ export default function ImportManagement() {
 
   const fetchBooks = async () => {
     try {
-      const res = await fetch('http://18.232.139.209:5000/api/books');
+      const res = await fetch('http://localhost:5000/api/books');
       if (res.ok) {
         const data = await res.json();
         setBooks(data.items || data || []);
@@ -69,7 +69,7 @@ export default function ImportManagement() {
   // 🌟 ĐÃ THÊM: Hàm gọi API lấy danh sách nhà cung cấp
   const fetchSuppliers = async () => {
     try {
-      const res = await fetch('http://18.232.139.209:5000/api/NhaCungCap', {
+      const res = await fetch('http://localhost:5000/api/NhaCungCap', {
         headers: { 'Authorization': `Bearer ${getToken()}` }
       });
       if (res.ok) {
@@ -133,8 +133,8 @@ export default function ImportManagement() {
     }
 
     const url = isEditing 
-      ? `http://18.232.139.209:5000/api/imports/${formData.maPhieuNhap}` 
-      : 'http://18.232.139.209:5000/api/imports';
+      ? `http://localhost:5000/api/imports/${formData.maPhieuNhap}` 
+      : 'http://localhost:5000/api/imports';
     const method = isEditing ? 'PUT' : 'POST';
 
     try {
@@ -165,7 +165,7 @@ export default function ImportManagement() {
     if (!window.confirm(`Bạn có chắc muốn xóa phiếu nhập ${maPhieuNhap}? (Tồn kho sách sẽ được trừ lại tương ứng)`)) return;
 
     try {
-      const res = await fetch(`http://18.232.139.209:5000/api/imports/${maPhieuNhap}`, {
+      const res = await fetch(`http://localhost:5000/api/imports/${maPhieuNhap}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getToken()}` }
       });

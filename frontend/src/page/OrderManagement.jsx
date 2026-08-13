@@ -31,7 +31,7 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://18.232.139.209:5000/api/orders/all', {
+      const response = await fetch('http://localhost:5000/api/orders/all', {
         headers: { 
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json' 
@@ -56,7 +56,7 @@ const OrderManagement = () => {
     if (!window.confirm(`Xác nhận chuyển trạng thái đơn ${orderId} sang "${newStatus}"?`)) return;
 
     try {
-      const response = await fetch(`http://18.232.139.209:5000/api/orders/${orderId}/status`, {
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${getToken()}`,
@@ -80,7 +80,7 @@ const OrderManagement = () => {
 
   const handleViewDetail = async (order) => {
     try {
-      const response = await fetch(`http://18.232.139.209:5000/api/orders/${order.id}`, {
+      const response = await fetch(`http://localhost:5000/api/orders/${order.id}`, {
         headers: { 'Authorization': `Bearer ${getToken()}` }
       });
       if (response.ok) {

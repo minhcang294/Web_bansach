@@ -9,7 +9,7 @@ import {
 } from 'react-icons/fa';
 
 // Tự động nhận diện URL API thực tế khi đưa lên mạng
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://18.232.139.209:5000/api'; 
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
 
 const StaffDashboard = () => {
   const navigate = useNavigate();
