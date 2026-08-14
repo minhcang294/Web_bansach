@@ -2,12 +2,13 @@ services:
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge
     container_name: bookstore-sqlserver
-    user: "0:0" # 👈 Tối ưu 1: Cấp quyền Root để trị dứt điểm lỗi Permission Denied
-    restart: always
+    user: "0:0"
+    restart: unless-stopped
     environment:
-      - SA_PASSWORD=YourStrong!Passw0rd
+      - SA_PASSWORD=${SA_PASSWORD}
       - ACCEPT_EULA=Y
     ports:
+      # Nếu vẫn bị timeout, hãy đổi "1433:1433" thành "8888:1433"
       - "1433:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
@@ -16,13 +17,14 @@ services:
   backend:
     build: ./backend/BookStore.API
     container_name: bookstore-backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "5000:8080"
     depends_on:
       - sqlserver
     environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=BookStoreDB;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;
+      # Kết nối nội bộ Docker dùng tên container 'sqlserver'
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=BookStoreDB;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
       - ASPNETCORE_ENVIRONMENT=Development
     volumes:
       - ./Backups:/app/backups
@@ -31,10 +33,9 @@ services:
     build:
       context: ./frontend
       args:
-        # 👈 Tối ưu 2: Biến động. Nếu không khai báo, tự động hiểu là localhost
         VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
     container_name: bookstore-frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
