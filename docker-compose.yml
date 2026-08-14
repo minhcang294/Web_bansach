@@ -9,7 +9,7 @@ services:
     ports:
       - "1433:1433"
     volumes:
-      - sqlserver_data:/var/opt/mssql  # 👈 Dùng named volume để Docker tự quản lý quyền
+      - sqlserver_data:/var/opt/mssql
       - ./Backups:/var/opt/mssql/backup
 
   backend:
@@ -30,7 +30,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+        VITE_API_URL: http://18.232.140.117:5000/api
     container_name: bookstore-frontend
     restart: always
     ports:
@@ -39,4 +39,4 @@ services:
       - backend
 
 volumes:
-  sqlserver_data:  # 👈 Khai báo ở đây để Docker tự tạo vùng nhớ sạch sẽ
+  sqlserver_data:
