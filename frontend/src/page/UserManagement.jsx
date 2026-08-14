@@ -30,7 +30,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/auth/users', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/users`, {
         headers: { 
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json' 
@@ -81,7 +81,7 @@ const UserManagement = () => {
   const handleDeleteUser = async (userId) => {
     if (window.confirm(`⚠️ Nguy hiểm: Bạn có chắc chắn muốn XÓA VĨNH VIỄN người dùng này?`)) {
       try {
-        const response = await fetch(`http://localhost:5000/api/auth/users/${userId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/users/${userId}`, {
           method: 'DELETE',
           headers: { 
             'Authorization': `Bearer ${getToken()}`,
@@ -108,7 +108,7 @@ const UserManagement = () => {
     
     if (window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản của [${user.fullName}]?`)) {
       try {
-        const response = await fetch(`http://localhost:5000/api/auth/users/${user.id}/status`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/users/${user.id}/status`, {
           method: 'PUT',
           headers: { 
             'Authorization': `Bearer ${getToken()}`,
@@ -120,7 +120,7 @@ const UserManagement = () => {
           fetchUsers(); 
         } else {
           // Fallback
-          const updateRes = await fetch(`http://localhost:5000/api/auth/users/${user.id}`, {
+          const updateRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/users/${user.id}`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -168,7 +168,7 @@ const UserManagement = () => {
       return;
     }
 
-    const url = isEditing ? `http://localhost:5000/api/auth/users/${formData.id}` : 'http://localhost:5000/api/auth/users';
+    const url = isEditing ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/users/${formData.id}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/users`;
     const method = isEditing ? 'PUT' : 'POST';
 
     const payload = isEditing ? {

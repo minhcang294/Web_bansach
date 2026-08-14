@@ -42,7 +42,7 @@ const ResetPassword = () => {
 
     try {
       // 🌟 ĐÃ SỬA: Đổi localhost thành IP của bạn để điện thoại có thể gọi được API
-      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -22,7 +22,7 @@ export default function SupplierManagement() {
 
     const fetchSuppliers = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/NhaCungCap', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/NhaCungCap`, {
                 headers: { 'Authorization': `Bearer ${getToken()}` }
             });
             if (res.ok) {
@@ -37,8 +37,8 @@ export default function SupplierManagement() {
     const handleSave = async (e) => {
         e.preventDefault();
         const url = isEditing 
-            ? `http://localhost:5000/api/NhaCungCap/${formData.maNhaCungCap}` 
-            : 'http://localhost:5000/api/NhaCungCap';
+            ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/NhaCungCap/${formData.maNhaCungCap}` 
+            : `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/NhaCungCap`;
         const method = isEditing ? 'PUT' : 'POST';
 
         try {
@@ -71,7 +71,7 @@ export default function SupplierManagement() {
     const handleDelete = async (id) => {
         if (!window.confirm("Bạn có chắc chắn muốn xóa nhà cung cấp này?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/NhaCungCap/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/NhaCungCap/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${getToken()}` }
             });

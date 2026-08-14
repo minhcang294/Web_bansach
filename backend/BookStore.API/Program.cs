@@ -93,17 +93,34 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 6. Tự động Migrate để bổ sung các bảng còn thiếu
+// 6. Tự động Migrate với cơ chế chờ SQL Server khởi động xong (Retry Pattern)
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    try 
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<ApplicationDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    int maxRetries = 10; // Thử lại tối đa 10 lần
+    int delaySeconds = 5; // Mỗi lần cách nhau 5 giây
+
+    for (int i = 0; i < maxRetries; i++)
     {
-        db.Database.Migrate(); 
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[CẢNH BÁO MIGRATION]: {ex.Message}");
+        try
+        {
+            db.Database.Migrate();
+            logger.LogInformation("✅ Đã tự động cập nhật Database (Migration) thành công!");
+            break;
+        }
+        catch (Exception ex)
+        {
+            if (i == maxRetries - 1)
+            {
+                logger.LogError($"❌ Không thể kết nối cơ sở dữ liệu sau {maxRetries} lần thử: {ex.Message}");
+                throw;
+            }
+            logger.LogWarning($"⚠️ SQL Server chưa sẵn sàng (Lần thử {i + 1}/{maxRetries}). Đang đợi {delaySeconds} giây để thử lại...");
+            System.Threading.Thread.Sleep(delaySeconds * 1000);
+        }
     }
 }
 

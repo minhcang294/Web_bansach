@@ -7,7 +7,7 @@ BEGIN
 END
 GO
 
-USE BANSACH;
+USE BookStoreDB;
 GO
 
 /*================================================================*/
@@ -344,3 +344,9 @@ GO*/
     CONSTRAINT [PK_ActivityLogs] PRIMARY KEY ([Id])
 );
 GO*/
+
+
+-- Cập nhật tài khoản của bạn thành quyền Admin
+UPDATE NHANVIEN 
+SET ROLE = 'Admin', VAITROPHUTRACH = N'Quản trị hệ thống' 
+WHERE EMAIL = 'minhcang29.4@gmail.com';

@@ -20,7 +20,7 @@ function BackupRestoreSection() {
 
   const fetchBackupFiles = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/Backup/files", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/Backup/files`, {
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
       if (response.ok) {
@@ -46,7 +46,7 @@ function BackupRestoreSection() {
     setMessage({ text: '', type: '' });
 
     try {
-      const response = await fetch("http://localhost:5000/api/Backup/backup", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/Backup/backup`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
@@ -78,7 +78,7 @@ function BackupRestoreSection() {
     setMessage({ text: '', type: '' });
 
     try {
-      const response = await fetch("http://localhost:5000/api/Backup/restore", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/Backup/restore`, {
         method: "POST",
         headers: { 
           "Authorization": `Bearer ${getToken()}`,
@@ -240,9 +240,12 @@ export default function Dashboard() {
   };
 
   const fetchWithFallback = async (urls, headers) => {
+    // 🌟 ĐÃ SỬA: Tự động lấy tên miền gốc và cắt đuôi /api (vì mảng urls đã có sẵn /api)
+    const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+
     for (const url of urls) {
       try {
-        const res = await fetch(`http://localhost:5000${url}`, { headers });
+        const res = await fetch(`${BASE_URL}${url}`, { headers });
         if (res.ok) {
           const data = await res.json();
           return Array.isArray(data) ? data : (data.items || data.data || data.$values || []);

@@ -9,6 +9,7 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
+      - ./Backups:/var/opt/mssql/backup # 👈 SQL Server sẽ ghi file vào đây
 
   backend:
     build: ./backend/BookStore.API
@@ -20,12 +21,14 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=BookStoreDB;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;
       - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./Backups:/app/backups # 👈 C# sẽ đọc file từ đây
 
   frontend:
     build:
       context: ./frontend
       args:
-       VITE_API_URL: http://localhost:5000/api
+            VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
     container_name: bookstore-frontend
     ports:
       - "3000:80"

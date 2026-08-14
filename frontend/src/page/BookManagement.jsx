@@ -34,6 +34,10 @@ const BookManagement = () => {
   const [newBook, setNewBook] = useState(initialBookState);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // 🌟 CẤU HÌNH API ĐỘNG CHO TOÀN BỘ FILE (LOCAL / AWS ĐỀU CHẠY ĐƯỢC)
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const BACKEND_DOMAIN = API_URL.replace('/api', '');
+
   const getToken = () => localStorage.getItem('token') || localStorage.getItem('accessToken');
 
   useEffect(() => { fetchInitialData(); }, []);
@@ -46,7 +50,7 @@ const BookManagement = () => {
 
   const fetchBooks = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/books');
+      const response = await fetch(`${API_URL}/books`);
       if (response.ok) {
         const data = await response.json();
         setBooks(data.items || data || []);
@@ -56,7 +60,7 @@ const BookManagement = () => {
 
   const fetchDanhMucs = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories'); 
+      const response = await fetch(`${API_URL}/categories`); 
       if (response.ok) {
         const data = await response.json();
         setDanhMucs(data || []);
@@ -66,7 +70,7 @@ const BookManagement = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/NhaCungCap', {
+      const response = await fetch(`${API_URL}/NhaCungCap`, {
         headers: { 'Authorization': `Bearer ${getToken()}` }
       });
       if (response.ok) {
@@ -115,7 +119,7 @@ const BookManagement = () => {
     formData.append('file', file); 
 
     try {
-      const response = await fetch('http://localhost:5000/api/upload', {
+      const response = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${getToken()}` },
         body: formData 
@@ -123,7 +127,8 @@ const BookManagement = () => {
 
       if (response.ok) {
         const data = await response.json();
-        const fullImageUrl = `http://localhost:5000${data.imageUrl}`;
+        // 🌟 Tự động lấy tên miền cho ảnh (không bị kẹt cứng ở localhost nữa)
+        const fullImageUrl = `${BACKEND_DOMAIN}${data.imageUrl}`;
         
         setNewBook({ ...newBook, imageUrl: fullImageUrl });
         alert("Đã tải ảnh lên thành công!");
@@ -146,9 +151,7 @@ const BookManagement = () => {
       return;
     }
 
-    // ĐÓNG GÓI DỮ LIỆU ĐẦY ĐỦ CẢ TIẾNG VIỆT VÀ TIẾNG ANH (GIẢI QUYẾT LỖI BỊ MẤT DỮ LIỆU)
     const payload = {
-      // Tên biến tiếng Việt (cho an toàn với Entity)
       maSach: newBook.id,
       tenSach: newBook.title,
       tacGia: newBook.author,
@@ -168,7 +171,6 @@ const BookManagement = () => {
       hinhThuc: newBook.coverType,
       giamGia: Number(newBook.discount) || 0,
 
-      // Tên biến tiếng Anh (khớp chính xác với DTO của C#)
       id: newBook.id,
       title: newBook.title,
       author: newBook.author,
@@ -190,7 +192,7 @@ const BookManagement = () => {
     };
 
     try {
-      const url = isEditing ? `http://localhost:5000/api/books/${newBook.id}` : 'http://localhost:5000/api/books';
+      const url = isEditing ? `${API_URL}/books/${newBook.id}` : `${API_URL}/books`;
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
@@ -214,7 +216,7 @@ const BookManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa cuốn sách này?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/books/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getToken()}` } });
+      const response = await fetch(`${API_URL}/books/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getToken()}` } });
       if (response.ok) { alert('Xóa thành công!'); fetchBooks(); } 
       else { alert('Xóa thất bại! Kiểm tra lại quyền Admin hoặc dữ liệu liên quan.'); }
     } catch (error) { console.error("Lỗi xóa sách:", error); }
@@ -371,7 +373,6 @@ const BookManagement = () => {
                     <option value="">-- Chọn nhà cung cấp từ kho --</option>
                     {suppliers.map(sup => (
                       <option key={sup.maNhaCungCap} value={sup.maNhaCungCap}>
-                        {/* 🌟 ĐÃ SỬA: Hiển thị thêm mã nhà cung cấp */}
                         {sup.tenNhaCungCap} - {sup.maNhaCungCap}
                       </option>
                     ))}
