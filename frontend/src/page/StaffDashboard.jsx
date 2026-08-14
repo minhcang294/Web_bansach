@@ -5,7 +5,8 @@ import {
   FaSearch, FaFilter, FaEye, FaCheck, FaTimes, 
   FaHome, FaClipboardList, FaBox, FaUsers, FaSignOutAlt, FaBell,
   FaPrint, FaArrowRight, FaClipboardCheck, FaFileExcel, FaSync,
-  FaUserAlt, FaChartBar, FaCalendarAlt, FaStore, FaPlus, FaEdit, FaListUl, FaFire 
+  FaUserAlt, FaChartBar, FaCalendarAlt, FaStore, FaPlus, FaEdit, FaListUl, FaFire,
+  FaBars
 } from 'react-icons/fa';
 
 // Tự động nhận diện URL API thực tế khi đưa lên mạng
@@ -36,6 +37,7 @@ const StaffDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
@@ -339,21 +341,43 @@ const StaffDashboard = () => {
   const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'Inter, Arial, sans-serif' }}>
-      
+    <div className="staff-shell" style={{ display: 'flex', height: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'Inter, Arial, sans-serif' }}>
+      <style>{`
+        @media (max-width: 992px) {
+          .staff-shell .staff-sidebar {
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 1200; width: 260px;
+            transform: translateX(-100%); transition: transform 0.25s ease;
+          }
+          .staff-shell .staff-sidebar.open { transform: translateX(0); }
+          .staff-shell .staff-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1100; }
+          .staff-shell .staff-overlay.show { display: block; }
+          .staff-shell .staff-hamburger { display: flex !important; }
+          .staff-shell .staff-title { display: none !important; }
+          .staff-shell .staff-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+          .staff-shell .staff-grid-2, .staff-shell .staff-grid-16 { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 576px) {
+          .staff-shell .staff-grid-4 { grid-template-columns: 1fr !important; }
+          .staff-shell main { padding: 16px !important; }
+        }
+      `}</style>
+
+      {/* Lớp phủ mờ khi mở sidebar trên mobile/tablet */}
+      <div className={`staff-overlay ${isSidebarOpen ? 'show' : ''}`} onClick={() => setIsSidebarOpen(false)}></div>
+
       {/* SIDEBAR */}
-      <div style={{ width: '260px', backgroundColor: '#1e293b', color: 'white', display: 'flex', flexDirection: 'column', boxShadow: '2px 0 5px rgba(0,0,0,0.1)', zIndex: 20 }}>
+      <div className={`staff-sidebar ${isSidebarOpen ? 'open' : ''}`} style={{ width: '260px', backgroundColor: '#1e293b', color: 'white', display: 'flex', flexDirection: 'column', boxShadow: '2px 0 5px rgba(0,0,0,0.1)', zIndex: 20 }}>
         <div style={{ padding: '20px 25px', fontSize: '24px', fontWeight: 'bold', borderBottom: '1px solid #334155', color: '#e74c3c' }}>
           Book<span style={{color: 'white'}}>Galaxy</span>
           <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'normal', marginTop: '5px', letterSpacing: '1px' }}>STAFF PORTAL</div>
         </div>
         
         <nav style={{ flex: 1, padding: '20px 0' }}>
-          <SidebarItem icon={<FaHome />} label="Tổng quan" active={activeMenu === 'dashboard'} onClick={() => setActiveMenu('dashboard')} />
-          <SidebarItem icon={<FaClipboardList />} label="Quản lý Đơn hàng" active={activeMenu === 'orders'} onClick={() => setActiveMenu('orders')} badge={stats.pendingOrders.toString()} />
-          <SidebarItem icon={<FaBox />} label="Sản phẩm & Kho" active={activeMenu === 'inventory'} onClick={() => setActiveMenu('inventory')} />
-          <SidebarItem icon={<FaListUl />} label="Danh mục sách" active={activeMenu === 'categories'} onClick={() => setActiveMenu('categories')} />
-          <SidebarItem icon={<FaUsers />} label="Khách hàng" active={activeMenu === 'customers'} onClick={() => setActiveMenu('customers')} />
+          <SidebarItem icon={<FaHome />} label="Tổng quan" active={activeMenu === 'dashboard'} onClick={() => { setActiveMenu('dashboard'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon={<FaClipboardList />} label="Quản lý Đơn hàng" active={activeMenu === 'orders'} onClick={() => { setActiveMenu('orders'); setIsSidebarOpen(false); }} badge={stats.pendingOrders.toString()} />
+          <SidebarItem icon={<FaBox />} label="Sản phẩm & Kho" active={activeMenu === 'inventory'} onClick={() => { setActiveMenu('inventory'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon={<FaListUl />} label="Danh mục sách" active={activeMenu === 'categories'} onClick={() => { setActiveMenu('categories'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon={<FaUsers />} label="Khách hàng" active={activeMenu === 'customers'} onClick={() => { setActiveMenu('customers'); setIsSidebarOpen(false); }} />
         </nav>
 
         {/* NÚT VỀ TRANG CHỦ & ĐĂNG XUẤT */}
@@ -364,11 +388,21 @@ const StaffDashboard = () => {
       </div>
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         
         {/* HEADER */}
-        <header style={{ height: '75px', backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 30px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', zIndex: 10, flexShrink: 0 }}>
-          <h2 style={{ margin: 0, color: '#0f172a', fontSize: '20px', fontWeight: '700' }}>Bảng Điều Khiển Nhân Viên</h2>
+        <header style={{ height: '75px', backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 0 15px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', zIndex: 10, flexShrink: 0, gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', minWidth: 0 }}>
+            <button
+              className="staff-hamburger"
+              onClick={() => setIsSidebarOpen(true)}
+              style={{ display: 'none', alignItems: 'center', justifyContent: 'center', background: '#1e293b', color: '#fff', border: 'none', width: '38px', height: '38px', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }}
+              aria-label="Mở menu"
+            >
+              <FaBars />
+            </button>
+            <h2 className="staff-title" style={{ margin: 0, color: '#0f172a', fontSize: '20px', fontWeight: '700', whiteSpace: 'nowrap' }}>Bảng Điều Khiển Nhân Viên</h2>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
             <div style={{ position: 'relative' }}>
               <div onClick={() => setShowNotifications(!showNotifications)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', backgroundColor: '#f1f5f9', borderRadius: '50%' }}>
@@ -404,7 +438,7 @@ const StaffDashboard = () => {
           {/* ================= 1. TAB DASHBOARD ================= */}
           {activeMenu === 'dashboard' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+              <div className="staff-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                 <StatCard icon={<FaBoxOpen />} title="Đơn Chờ Xử Lý" value={stats.pendingOrders} color="#d97706" bg="#fef3c7" />
                 <StatCard icon={<FaTruck />} title="Đơn Đang Giao" value={stats.shippingOrders} color="#0284c7" bg="#e0f2fe" />
                 <StatCard icon={<FaCheckCircle />} title="Hoàn Tất (Hôm nay)" value={stats.completedToday} color="#16a34a" bg="#dcfce7" />
@@ -412,7 +446,7 @@ const StaffDashboard = () => {
               </div>
 
               {/* 🌟 2 BẢNG TOP 10 (SÁCH VÀ KHÁCH HÀNG) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
+              <div className="staff-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
                 {/* Top 10 Sách */}
                 <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
@@ -451,7 +485,7 @@ const StaffDashboard = () => {
               </div>
 
               {/* BẢNG ĐƠN HÀNG MỚI VÀ CẢNH BÁO TỒN KHO */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '25px' }}>
+              <div className="staff-grid-16" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '25px' }}>
                 <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', marginBottom: '18px', width: '100%' }}>
                     <h3 style={{ margin: 0, fontSize: '16px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
@@ -748,7 +782,7 @@ const StaffDashboard = () => {
       {/* MODAL CHI TIẾT ĐƠN HÀNG */}
       {isModalOpen && selectedOrder && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(3px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', width: '650px', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'fadeIn 0.2s ease', maxHeight: '90vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          <div style={{ backgroundColor: 'white', width: '650px', maxWidth: '94vw', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'fadeIn 0.2s ease', maxHeight: '90vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <div style={{ position: 'absolute', top: 0, right: 0, padding: '16px 20px', zIndex: 10000, display: 'flex', justifyContent: 'flex-end', width: '100%', pointerEvents: 'none' }}>
               <button onClick={() => setIsModalOpen(false)} style={{ pointerEvents: 'auto', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '50%', width: '34px', height: '34px', fontSize: '16px', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}><FaTimes /></button>
             </div>

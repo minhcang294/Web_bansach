@@ -246,3 +246,54 @@ a {
 .footer-grid a, .footer-grid p, .footer-grid div { display: block; color: #bbb; margin-bottom: 15px; font-size: 15px; transition: 0.2s; }
 .footer-grid a:hover { color: var(--primary); padding-left: 5px; }
 .footer-bottom { border-top: 1px solid #333; text-align: center; padding: 25px; color: #888; font-size: 14px; }
+
+/* ================================================================ */
+/* ================= RESPONSIVE: TABLET (<=992px) ================= */
+/* ================================================================ */
+@media (max-width: 992px) {
+  .container { padding: 0 16px; }
+
+  .hero-wrapper { height: 360px; }
+
+  .service-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+  .category-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .book-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+
+  .footer-grid { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+}
+
+/* ================================================================ */
+/* ================= RESPONSIVE: MOBILE (<=576px) ================= */
+/* ================================================================ */
+@media (max-width: 576px) {
+  .container { padding: 0 12px; }
+
+  /* Banner xếp chồng dọc thay vì cắt nhỏ nằm ngang */
+  .hero-section { margin-bottom: 25px; margin-top: 15px; }
+  .hero-wrapper { flex-direction: column; height: auto; gap: 12px; }
+  .hero-left { flex: none; height: 220px; }
+  .hero-right { flex-direction: row; height: 110px; }
+  .hero-right img { height: 100%; }
+
+  .service-section { margin-bottom: 25px; }
+  .service-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px 0; }
+  .service-item { flex-direction: column; text-align: center; gap: 8px; }
+
+  .section-title { margin: 30px 0 16px; }
+  .section-title h2 { font-size: 19px; }
+
+  .category-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 30px; }
+  .category-item { padding: 12px 6px; font-size: 12.5px; }
+
+  .book-section { margin-bottom: 35px; }
+  .book-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .book-title { font-size: 14px; height: 42px; }
+  .book-price { font-size: 17px; }
+
+  .promo-banner { margin: 30px 0; }
+  .promo-banner img { max-height: 130px; }
+
+  .footer-grid { grid-template-columns: 1fr; gap: 25px; text-align: left; }
+}

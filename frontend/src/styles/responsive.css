@@ -1,0 +1,71 @@
+/* ==================================================================== */
+/* FILE: responsive.css                                                 */
+/* Các quy tắc responsive dùng chung cho TOÀN BỘ website:                */
+/* trang khách hàng, trang nhân viên (Staff) và trang quản trị (Admin). */
+/* File này chỉ chỉnh giao diện — không thay đổi bất kỳ logic nào.      */
+/* ==================================================================== */
+
+/* -------------------------------------------------------------- */
+/* 1) BẢNG DỮ LIỆU (table quản lý sách/đơn hàng/người dùng...)     */
+/* Cho phép cuộn ngang thay vì bị bể giao diện trên màn hình nhỏ. */
+/* -------------------------------------------------------------- */
+@media (max-width: 900px) {
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table thead,
+  table tbody {
+    display: table;
+    width: 100%;
+    min-width: 640px;
+  }
+}
+
+/* -------------------------------------------------------------- */
+/* 2) MODAL / HỘP THOẠI CÓ CHIỀU RỘNG CỐ ĐỊNH BẰNG PX              */
+/* Ép co lại vừa màn hình điện thoại thay vì tràn ra ngoài.        */
+/* -------------------------------------------------------------- */
+@media (max-width: 640px) {
+  [style*="width: 650px"],
+  [style*="width: 750px"],
+  [style*="width: 800px"],
+  [style*="width: 700px"],
+  [style*="width: 600px"],
+  [style*="width: 550px"],
+  [style*="width: 500px"],
+  [style*="width: 450px"],
+  [style*="width: 420px"],
+  [style*="width: 400px"],
+  [style*="width: 380px"],
+  [style*="width: 350px"],
+  [style*="width: 340px"],
+  [style*="width: 320px"] {
+    width: 94vw !important;
+    max-width: 94vw !important;
+  }
+}
+
+/* -------------------------------------------------------------- */
+/* 3) KHUNG QUẢN TRỊ / NHÂN VIÊN: form lưới nhiều cột co về 1 cột  */
+/* trên điện thoại để không bị chèn chữ, tràn ngang.               */
+/* -------------------------------------------------------------- */
+@media (max-width: 576px) {
+  .admin-shell main,
+  .admin-shell > div > div[style*="flex: 1"] {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* -------------------------------------------------------------- */
+/* 4) FORM chung (đăng nhập / đăng ký / quên mật khẩu...)          */
+/* -------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .register-form,
+  .card {
+    padding: 24px 18px !important;
+  }
+}

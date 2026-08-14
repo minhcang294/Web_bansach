@@ -2,6 +2,7 @@ services:
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge
     container_name: bookstore-sqlserver
+    user: "0:0" # 👈 Tối ưu 1: Cấp quyền Root để trị dứt điểm lỗi Permission Denied
     restart: always
     environment:
       - SA_PASSWORD=YourStrong!Passw0rd
@@ -30,7 +31,8 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://18.232.140.117:5000/api
+        # 👈 Tối ưu 2: Biến động. Nếu không khai báo, tự động hiểu là localhost
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
     container_name: bookstore-frontend
     restart: always
     ports:

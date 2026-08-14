@@ -46,3 +46,7 @@ cập nhật filr .env
 git push
 aws 
 git pull
+
+docker compose yml
+
+  VITE_API_URL: http://18.232.140.117:5000/api

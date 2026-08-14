@@ -232,7 +232,7 @@ const BookManagement = () => {
   return (
     <div style={{ padding: '20px' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'nowrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <h2 style={{ margin: 0, color: '#2c3e50', whiteSpace: 'nowrap' }}>Quản lý Sách</h2>
         <button onClick={handleOpenAdd} style={{ padding: '8px 16px', backgroundColor: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', width: 'max-content', whiteSpace: 'nowrap', display: 'inline-block' }}>
           + Thêm sách mới
