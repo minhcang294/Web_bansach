@@ -1,6 +1,6 @@
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    image: mcr.microsoft.com/azure-sql-edge
     container_name: bookstore-sqlserver
     environment:
       - SA_PASSWORD=YourStrong!Passw0rd
@@ -28,7 +28,7 @@ services:
     build:
       context: ./frontend
       args:
-            VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
     container_name: bookstore-frontend
     ports:
       - "3000:80"
