@@ -1,10 +1,17 @@
 /*================================================================*/
 /* 0. KIỂM TRA VÀ TẠO DATABASE (NẾU CHƯA CÓ)                      */
 /*================================================================*/
-IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'BANSACH')
+USE master;
+GO
+
+IF EXISTS (SELECT * FROM sys.databases WHERE name = 'BookStoreDB')
 BEGIN
-    CREATE DATABASE BANSACH;
+    ALTER DATABASE [BookStoreDB] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [BookStoreDB];
 END
+GO
+
+CREATE DATABASE BookStoreDB;
 GO
 
 USE BookStoreDB;
@@ -26,6 +33,7 @@ IF OBJECT_ID('NHACUNGCAP', 'U') IS NOT NULL DROP TABLE NHACUNGCAP;
 IF OBJECT_ID('KHUYENMAI', 'U') IS NOT NULL DROP TABLE KHUYENMAI;
 IF OBJECT_ID('KHACHHANG', 'U') IS NOT NULL DROP TABLE KHACHHANG;
 IF OBJECT_ID('NHANVIEN', 'U') IS NOT NULL DROP TABLE NHANVIEN;
+IF OBJECT_ID('ActivityLogs', 'U') IS NOT NULL DROP TABLE ActivityLogs;
 GO
 
 /*================================================================*/
@@ -44,7 +52,6 @@ CREATE TABLE DANHMUC (
 );
 GO
 
--- ĐÃ BỔ SUNG: 3 cột liên hệ cho Nhà cung cấp
 CREATE TABLE NHACUNGCAP (
     MANHACUNGCAP    varchar(30)     NOT NULL PRIMARY KEY,
     TENNHACUNGCAP   nvarchar(150)   NOT NULL,
@@ -210,7 +217,21 @@ CREATE TABLE CHITIETHOADON (
 GO
 
 /*================================================================*/
-/* 3. TẠO INDEX ĐỂ TĂNG TỐC ĐỘ TRUY VẤN                           */
+/* 3. BẢNG MIGRATIONS BỔ SUNG                                     */
+/*================================================================*/
+CREATE TABLE [ActivityLogs] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] nvarchar(max) NOT NULL,
+    [Action] nvarchar(max) NOT NULL,
+    [EntityType] nvarchar(max) NOT NULL,
+    [Details] nvarchar(max) NULL,
+    [Timestamp] datetime2 NOT NULL,
+    CONSTRAINT [PK_ActivityLogs] PRIMARY KEY ([Id])
+);
+GO
+
+/*================================================================*/
+/* 4. TẠO INDEX ĐỂ TĂNG TỐC ĐỘ TRUY VẤN                           */
 /*================================================================*/
 CREATE INDEX IX_SACH_TENSACH ON SACH(TENSACH);
 CREATE INDEX IX_GOM_MADANHMUC ON GOM(MADANHMUC);
@@ -222,7 +243,7 @@ CREATE INDEX IX_CTPN_MAPHIEUNHAP ON CHITIETPHIEUNHAP(MAPHIEUNHAP);
 GO
 
 /*================================================================*/
-/* 4. CHÈN DỮ LIỆU MẪU (DUMMY DATA)                               */
+/* 5. CHÈN DỮ LIỆU MẪU (DUMMY DATA)                               */
 /*================================================================*/
 
 -- ----- Danh mục -----
@@ -256,7 +277,7 @@ INSERT INTO DANHMUC (MADANHMUC, TENDANHMUC, SLUG, MOTA, PARENTID) VALUES
 ('NN04', N'Tiếng Hàn', 'tieng-han', N'Tài liệu tiếng Hàn Quốc', 'NN');
 GO
 
--- ĐÃ BỔ SUNG: Dữ liệu liên hệ mẫu cho Nhà cung cấp
+-- ----- Nhà cung cấp -----
 INSERT INTO NHACUNGCAP (MANHACUNGCAP, TENNHACUNGCAP, MOTA, SODIENTHOAI, EMAIL, DIACHI) VALUES
 ('NCC01', N'Công ty CP Sách First News', N'Chuyên phát hành sách văn học và kỹ năng sống', '02838227979', 'info@firstnews.com.vn', N'11H Nguyễn Thị Minh Khai, Q1, TP.HCM'),
 ('NCC02', N'NXB Kim Đồng', N'Nhà xuất bản đầu sách thiếu nhi, manga trong nước', '1900571595', 'cskh@nxbkimdong.com.vn', N'55 Quang Trung, Hai Bà Trưng, Hà Nội'),
@@ -265,18 +286,17 @@ GO
 
 -- ----- Sách -----
 INSERT INTO SACH (MASACH, TENSACH, TACGIA, GIABAN, GIAMGIA, SOLUONGTON, NOIDUNGDEMO, LOAISACH, NAMXUATBAN, SOTRANG, NGONNGU, ANHSACH, MANHACUNGCAP, NHAXUATBAN) VALUES
-('S001', N'Nhà Giả Kim', N'Paulo Coelho', 79000, 10, 10, N'Hành trình đi tìm kho báu và ý nghĩa cuộc sống.', N'Văn học', 1988, 228, N'Tiếng Việt', '\Image\VANHOC\TIEUTHUYET\NHAGIAKIM.webp', 'NCC01', N'NXB Hội Nhà Văn'),
-('S002', N'Chung Một Mái Nhà ', N'Reki Kawahara', 85000, 0, 20, N'Trận chiến sinh tồn trong thế giới ảo.', N'Văn học', 2009, 250, N'Tiếng Việt', '\Image\VANHOC\LightNovel\CHUNGMOTMAINHA.webp', 'NCC03', N'IPM'),
-('S003', N'Bến Xe', N'Cố Mạn', 65000, 10, 4, N'Câu chuyện tình yêu đầy lãng mạn.', N'Văn học', 2010, 300, N'Tiếng Việt', '\Image\VANHOC\NGONTINH\BENXE.webp', 'NCC01', N'NXB Văn Học'),
-('S004', N'Con Đường Chẳng Mấy Ai Đi ', N'Dale Carnegie', 86000, 10, 15, N'Nghệ thuật đối nhân xử thế kinh điển mọi thời đại.', N'Kỹ năng', 1936, 320, N'Tiếng Việt', '\Image\KYNANG\KYNANGSONG\CONDUONGCHANGMAYAIDI.webp', 'NCC01', N'First News'),
-('S005', N'Cách Để Trở Thành Cha Mẹ Tốt', N'Rosie Nguyễn', 72000, 0, 20, N'Cuốn sách truyền cảm hứng dành cho người trẻ Việt Nam.', N'Kỹ năng', 2016, 250, N'Tiếng Việt','\Image\KYNANG\SACHCHOTUOIMOILON\CACHDETROTHANHCHAMETOT.webp', 'NCC03', N'Nhã Nam'),
-('S006', N'Kinh Tế Việt Nam', N'Robert Kiyosaki', 95000, 10, 30, N'Nền tảng tư duy tài chính thay đổi cuộc đời.', N'Kinh tế', 1997, 336, N'Tiếng Việt', '\Image\KINHTE\PHANTICHKINHTE\KINHTEVIETNAM.webp', 'NCC03', N'NXB Trẻ'),
-('S007', N'Giải Trí Đến Chết', N'Philip Kotler', 119000, 0, 10, N'Xu hướng marketing trong kỷ nguyên số.', N'Kinh tế', 2017, 280, N'Tiếng Việt', '\Image\KINHTE\Marketing_BANHANG\GIAITRIDENCHET.webp', 'NCC03', N'NXB Trẻ'),
-('S008', N'AI Roadmap', N'Walter Isaacson', 199000, 0, 3, N'Tiểu sử về vị CEO huyền thoại của Apple.', N'Kinh tế', 2011, 650, N'Tiếng Việt', '\Image\KINHTE\QUANTRI_LANHDAO\AI Roadmap.webp', 'NCC01', N'Alpha Books'),
-('S009', N'Dan Dan Dan ', N'Fujiko F. Fujio', 25000, 10, 50, N'Bộ truyện tranh thiếu nhi kinh điển của Nhật Bản.', N'Thiếu nhi', 1969, 190, N'Tiếng Việt', '\Image\THIEUNHI\MagaComic\DAN DA DAN.webp', 'NCC02', N'NXB Kim Đồng'),
-('S010', N'Thám Tử Lừng Danh Conan', N'Gosho Aoyama', 25000, 0, 30, N'Truyện tranh trinh thám.', N'Thiếu nhi', 1994, 200, N'Tiếng Việt', '\Image\THIEUNHI\MagaComic\THAMTULUONGDANHCONAN.webp', 'NCC02', N'NXB Kim Đồng'),
-('S011', N'Mao', N'Eiichiro Oda', 25000, 0, 20, N'Truyện tranh phiêu lưu hài hước.', N'Thiếu nhi', 1997, 200, N'Tiếng Việt', '\Image\THIEUNHI\MagaComic\MAO.webp', 'NCC02', N'NXB Kim Đồng');
-
+('S001', N'Nhà Giả Kim', N'Paulo Coelho', 79000, 10, 10, N'Hành trình đi tìm kho báu và ý nghĩa cuộc sống.', N'Văn học', 1988, 228, N'Tiếng Việt', '/Image/VANHOC/TIEUTHUYET/NHAGIAKIM.webp', 'NCC01', N'NXB Hội Nhà Văn'),
+('S002', N'Chung Một Mái Nhà ', N'Reki Kawahara', 85000, 0, 20, N'Trận chiến sinh tồn trong thế giới ảo.', N'Văn học', 2009, 250, N'Tiếng Việt', '/Image/VANHOC/LightNovel/CHUNGMOTMAINHA.webp', 'NCC03', N'IPM'),
+('S003', N'Bến Xe', N'Cố Mạn', 65000, 10, 4, N'Câu chuyện tình yêu đầy lãng mạn.', N'Văn học', 2010, 300, N'Tiếng Việt', '/Image/VANHOC/NGONTINH/BENXE.webp', 'NCC01', N'NXB Văn Học'),
+('S004', N'Con Đường Chẳng Mấy Ai Đi ', N'Dale Carnegie', 86000, 10, 15, N'Nghệ thuật đối nhân xử thế kinh điển mọi thời đại.', N'Kỹ năng', 1936, 320, N'Tiếng Việt', '/Image/KYNANG/KYNANGSONG/CONDUONGCHANGMAYAIDI.webp', 'NCC01', N'First News'),
+('S005', N'Cách Để Trở Thành Cha Mẹ Tốt', N'Rosie Nguyễn', 72000, 0, 20, N'Cuốn sách truyền cảm hứng dành cho người trẻ Việt Nam.', N'Kỹ năng', 2016, 250, N'Tiếng Việt','/Image/KYNANG/SACHCHOTUOIMOILON/CACHDETROTHANHCHAMETOT.webp', 'NCC03', N'Nhã Nam'),
+('S006', N'Kinh Tế Việt Nam', N'Robert Kiyosaki', 95000, 10, 30, N'Nền tảng tư duy tài chính thay đổi cuộc đời.', N'Kinh tế', 1997, 336, N'Tiếng Việt', '/Image/KINHTE/PHANTICHKINHTE/KINHTEVIETNAM.webp', 'NCC03', N'NXB Trẻ'),
+('S007', N'Giải Trí Đến Chết', N'Philip Kotler', 119000, 0, 10, N'Xu hướng marketing trong kỷ nguyên số.', N'Kinh tế', 2017, 280, N'Tiếng Việt', '/Image/KINHTE/Marketing_BANHANG/GIAITRIDENCHET.webp', 'NCC03', N'NXB Trẻ'),
+('S008', N'AI Roadmap', N'Walter Isaacson', 199000, 0, 3, N'Tiểu sử về vị CEO huyền thoại của Apple.', N'Kinh tế', 2011, 650, N'Tiếng Việt', '/Image/KINHTE/QUANTRI_LANHDAO/AI Roadmap.webp', 'NCC01', N'Alpha Books'),
+('S009', N'Dan Dan Dan ', N'Fujiko F. Fujio', 25000, 10, 50, N'Bộ truyện tranh thiếu nhi kinh điển của Nhật Bản.', N'Thiếu nhi', 1969, 190, N'Tiếng Việt', '/Image/THIEUNHI/MagaComic/DAN DA DAN.webp', 'NCC02', N'NXB Kim Đồng'),
+('S010', N'Thám Tử Lừng Danh Conan', N'Gosho Aoyama', 25000, 0, 30, N'Truyện tranh trinh thám.', N'Thiếu nhi', 1994, 200, N'Tiếng Việt', '/Image/THIEUNHI/MagaComic/THAMTULUONGDANHCONAN.webp', 'NCC02', N'NXB Kim Đồng'),
+('S011', N'Mao', N'Eiichiro Oda', 25000, 0, 20, N'Truyện tranh phiêu lưu hài hước.', N'Thiếu nhi', 1997, 200, N'Tiếng Việt', '/Image/THIEUNHI/MagaComic/MAO.webp', 'NCC02', N'NXB Kim Đồng');
 GO
 
 -- ----- Gán sách vào danh mục -----
@@ -307,46 +327,16 @@ INSERT INTO CHITIETPHIEUNHAP (MAPHIEUNHAP, MASACH, SOLUONGNHAP, GIANHAP, THANHTI
 GO
 
 /*================================================================*/
-/* 5. KIỂM TRA DỮ LIỆU SAU KHI TẠO                                */
+/* 6. CẬP NHẬT QUYỀN ADMIN (CHẮC CHẮN HOẠT ĐỘNG)                  */
 /*================================================================*/
-SELECT * FROM NHACUNGCAP;
-SELECT * FROM PHIEUNHAP;
-SELECT * FROM CHITIETPHIEUNHAP;
-SELECT * FROM HOADON;
-SELECT * FROM SACH;
-SELECT * FROM NHANVIEN;
-
-/*
-DROP TABLE IF EXISTS [__EFMigrationsHistory];
-DROP TABLE IF EXISTS [ActivityLogs];
-
--- 1. Chuyển context sang master để giải phóng database BANSACH
-USE master;
-GO
-
--- 2. Ngắt kết nối các tiến trình khác đang dùng BANSACH và xóa database
-ALTER DATABASE [BANSACH] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-DROP DATABASE [BANSACH];
-GO
-
--- 3. Tạo lại database trống mới tinh
-CREATE DATABASE [BANSACH];
-GO*/
-
-/* BẢNG MIGRATIONS*/
-/*CREATE TABLE [ActivityLogs] (
-    [Id] int NOT NULL IDENTITY,
-    [UserId] nvarchar(max) NOT NULL,
-    [Action] nvarchar(max) NOT NULL,
-    [EntityType] nvarchar(max) NOT NULL,
-    [Details] nvarchar(max) NULL,
-    [Timestamp] datetime2 NOT NULL,
-    CONSTRAINT [PK_ActivityLogs] PRIMARY KEY ([Id])
-);
-GO*/
-
-
--- Cập nhật tài khoản của bạn thành quyền Admin
 UPDATE NHANVIEN 
 SET ROLE = 'Admin', VAITROPHUTRACH = N'Quản trị hệ thống' 
-WHERE EMAIL = 'minhcang29.4@gmail.com';
+WHERE TENDANGNHAP = 'admin';
+GO
+
+/*================================================================*/
+/* 7. KIỂM TRA DỮ LIỆU SAU KHI TẠO                                */
+/*================================================================*/
+SELECT * FROM NHANVIEN;
+SELECT * FROM HOADON;
+GO
